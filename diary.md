@@ -10,7 +10,7 @@
 ### Key Insights
 - **Important: security concern identified** - lecturer must not upload documents to server
 - Processing must happen client-side (in the lecturer's browser) to protect exam confidentiality 
-- lecturer generates quiz locally, then uploads only the approved quiz (not the exam)
+- Lecturer generates quiz locally, then uploads only the approved quiz (not the exam)
 
 ### Concerns
 - Need JavaScript/browser-based text processing or if Python is possible
