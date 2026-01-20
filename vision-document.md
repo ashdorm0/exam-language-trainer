@@ -19,3 +19,14 @@ The stakeholder of this product are the lecturers and the foreign students.
 The lecturer's goals are to make sure that all students that all students are at least at the same starting point, understanding the language before the subject of the course.
 This should matter to a lecturer because they cannot evaluate the level of a certain course if they are not super if what the students dont understand is the course matter or the actual language itself.
 The foreign students goals are to not only learn a new language but also learn a potential difficult subject in that new language. As a student, it is their responsibility to prepare for an exam adequately, but as a foreign student that can be harder with the existence of words that maybe they have not seen before and are not familiar with despite their language level and with a simple remainder before an exam, it can help certain students improve their results.
+
+## Software Overview
+The system will be made of three parts. 
+- Client side tool which runs in the lecturers browser, processes the exam documents and generates the quiz locally 
+- Storage/cloud application that stores the approved quizez
+- Web based student interface where the students can access and take quizzes.
+
+This three part system will essential for exam security as the lecturer will never upload the document to the internet where someone could access it.
+It should be a simple tool to use for both lecturers and students.
+The lecturers would load the exam, after which the browser runs processes the exam by extracting a number of difficult words and then generates a vocabulary quiz after which the lecturer approves the quiz and uploads it to a server.
+The student will be given the quiz a few days in advance to help them prepare.
