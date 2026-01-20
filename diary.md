@@ -24,3 +24,11 @@
 - This project has two parts:
 1. A client side tool for the lecturers that runs in the browser
 2. A server system for students to take the approved quizzes 
+
+## Wednesday, January 20 2026
+- Woke up later than planned, feeling pretty anxious about the project overall
+- I will do my best to take things step by step and slowly move towards my goal
+
+### Plans for today 
+- Research well made Vision Documents
+- Start writing the Vision Document 
