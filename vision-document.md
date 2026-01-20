@@ -8,6 +8,12 @@ This will be achieved by creating a web-based application that extracts unusual/
 This goal should be achievable without compromising exam integrity and security should be a main concern.
 In a heavily globalized world I believe this will help more students be more confident and do better on their exams. As a foreign student myself, I genuinely believe this product could have helped me a number of times.
 
+## Business Case Summary 
+The problem is international students taking exams in a non-native language can mask their actual subject knowledge and some might fail not due to not knowing the material but because they are struggling with understanding specific vocabulary, and this creates feelings of unfairness and anxiety in some students.
+And this matters even more today as universities around the world are becoming more and more internationalized, as more students have the chance to go study abroad with myself being a prime example.
+The ones who care about these the most should be the universities themselves as they should provide a fair assessment for everyone, as exam integrity is one of the main concerns. 
+And this proposition has good value because it helps students each begin at the same understanding of the language, reduces student anxiety and maintains exam security all at a low cost 
+
 ## Stakeholders
 The stakeholder of this product are the lecturers and the foreign students.
 The lecturer's goals are to make sure that all students that all students are at least at the same starting point, understanding the language before the subject of the course.
