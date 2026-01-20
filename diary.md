@@ -28,7 +28,8 @@
 ## Wednesday, January 20 2026
 - Woke up later than planned, feeling pretty anxious about the project overall
 - I will do my best to take things step by step and slowly move towards my goal
+- After writing a draft of the first five sections of the vision document and doing so without the help of AI, outside of brainstorming and asking question, I still feel anxious about actually learning the technologies and how the project will evolve and change and if i can keep up with the work
+- Regularly commited to Git after each section 
 
-### Plans for today 
-- Research well made Vision Documents
-- Start writing the Vision Document 
+### Tomorrow's plan
+- Finish remaining 4 sections of the vision document 
