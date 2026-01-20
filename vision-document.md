@@ -30,3 +30,15 @@ This three part system will essential for exam security as the lecturer will nev
 It should be a simple tool to use for both lecturers and students.
 The lecturers would load the exam, after which the browser runs processes the exam by extracting a number of difficult words and then generates a vocabulary quiz after which the lecturer approves the quiz and uploads it to a server.
 The student will be given the quiz a few days in advance to help them prepare.
+
+## Main Risk summary 
+
+### Business risks
+One of the main business risk would be if the students and/or the lecturers are open to this idea while the other would be the already established competitors in the market
+### Technological risks
+- can the processing be done in the lecturers browser?
+- can any kind of files be processed in the browser? can it be done?
+- what defines a hard word?
+### Project risks
+- time constraints, 15 weeks may not be enough time to build a whole system
+- technical constrains, learning about language processing as the project progresses
