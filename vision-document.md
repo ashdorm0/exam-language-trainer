@@ -42,3 +42,12 @@ One of the main business risk would be if the students and/or the lecturers are 
 ### Project risks
 - time constraints, 15 weeks may not be enough time to build a whole system
 - technical constrains, learning about language processing as the project progresses
+
+## Competitors
+There are several platforms online that can generate quizzes based on uploaded file. They mostly focus on creating notes or quizzes based on the uploaded content rather than specifically focusing on non-native speakers students.
+Apart from that, they all require uploading a document so the safety that is of utmost importance in the academic field is compromised.
+Some of the competitors i have found are
+- Jotform which is a purely AI based website where you can upload your own already made quiz or choose a template and the AI will generate a quiz. They are mostly a form generator i.e Order forms, Registration forms, Booking forms etc.
+- Acequiz AI lets you upload a image or PDF file than input a prompt on about the quiz. And they require you create an account and only the first five quizzes are free.
+From my research most of the tools function in the same way, they us AI API to create a quiz based on a prompt, using the uploaded file as context.
+So a gap is present in the market that can be filled by this project which combines vocabulary extraction for students learning a new language with secure, client-side processing of confidential materials.
