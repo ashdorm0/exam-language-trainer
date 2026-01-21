@@ -8,6 +8,10 @@ This will be achieved by creating a web-based application that extracts unusual/
 This goal should be achievable without compromising exam integrity and security should be a main concern.
 In a heavily globalized world I believe this will help more students be more confident and do better on their exams. As a foreign student myself, I genuinely believe this product could have helped me a number of times.
 
+## Business Model Canvas
+
+![Business Model Canvas](./business_canvas_model.png)
+
 ## Business Case Summary 
 The problem is international students taking exams in a non-native language can mask their actual subject knowledge and some might fail not due to not knowing the material but because they are struggling with understanding specific vocabulary, and this creates feelings of unfairness and anxiety in some students.
 And this matters even more today as universities around the world are becoming more and more internationalized, as more students have the chance to go study abroad with myself being a prime example.
