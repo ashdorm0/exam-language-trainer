@@ -1,6 +1,6 @@
 # Daily Diary
 
-## Tuesday, January 19, 2026
+## Monday, January 19, 2026
 
 ### What i did today 
 - Met with supervisor to discuss the project 
@@ -25,7 +25,7 @@
 1. A client side tool for the lecturers that runs in the browser
 2. A server system for students to take the approved quizzes 
 
-## Wednesday, January 20 2026
+## Tuesday, January 20 2026
 - Woke up later than planned, feeling pretty anxious about the project overall
 - I will do my best to take things step by step and slowly move towards my goal
 - After writing a draft of the first six sections of the vision document and doing so without the help of AI, outside of brainstorming and asking question, I still feel anxious about actually learning the technologies and how the project will evolve and change and if i can keep up with the work
@@ -34,3 +34,16 @@
 
 ### Tomorrow's plan
 - Finish remaining 3 sections of the vision document 
+
+## Wednesday, January 21 2026
+- Woke up on time today, feeling better as the vision document should be finished on time today
+- I finished the final three sections of the vision document
+- Polished the vision document by using AI to spell check
+- Creating the business model canvas was a pain but it turned out alright
+- Learned about proper markdown formatting for PDF conversion 
+- Will upload vision document to blackboard today.
+
+### Tomorrow's plan
+- Review vision document 
+- Prepare questions for Chris (i.e file formats, vocab extraction approach) 
+- Meet Chris at 16:00
