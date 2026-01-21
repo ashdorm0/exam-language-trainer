@@ -35,6 +35,16 @@ It should be a simple tool to use for both lecturers and students.
 The lecturers would load the exam, after which the browser runs processes the exam by extracting a number of difficult words and then generates a vocabulary quiz after which the lecturer approves the quiz and uploads it to a server.
 The student will be given the quiz a few days in advance to help them prepare.
 
+## Summary of Software Features
+The Exam Language Trainer provides the following key features for both lecturers and students 
+
+- **Document Processing**: Lecturers load exam paper into their browser in one of the approved formats.
+- **Vocabulary Extraction**: The system identifies and extracts difficult or unusual words from the loaded exam papers
+- **Quiz generation**: Multiple-choice quizzes are generated based on the extracted words, which have to be approved by a lecturer
+- **Quiz Access**: Students access approved quizzes via the web platform without having access or viewing any of the exam papers
+- **Result tracking and reviewing**: Students can track and review the results of the vocabulary quiz
+- **Security**: To emphasize exam confidentiality, security is one of the main concerns of the systems to maintain exam integrity. This happens by creating a two part system where all the processing done on the exam paper happens client side and only the approved quizzes are uploaded to the server
+
 ## Main Risk summary 
 
 ### Business risks
