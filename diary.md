@@ -47,3 +47,9 @@
 - Review vision document 
 - Prepare questions for Chris (i.e file formats, vocab extraction approach) 
 - Meet Chris at 16:00
+
+## Thursday, January 22 2026
+- Uploaded vision document to google docs
+- Realized that i forgot to properly format my vision document thanks to an email from my supervisor
+- Learned that formatting is as important as content
+- Meeting Chris at 16:00
