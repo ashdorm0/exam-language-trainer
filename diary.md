@@ -53,3 +53,8 @@
 - Realized that i forgot to properly format my vision document thanks to an email from my supervisor
 - Learned that formatting is as important as content
 - Meeting Chris at 16:00
+
+## Supervisor meeting feedback
+- Vision Document too wordy, sentences too long 
+- Need to fix value proposition to focus on solution 
+- Research direction: security approaches, client side processing, similar apps 
