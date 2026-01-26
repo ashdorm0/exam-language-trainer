@@ -62,5 +62,9 @@
 ## Monday, January 26 2026
 - Revised Vision Document based on supervisor feedback
 - Added supervisors as collaborators on GitHub
-- Started Specification Document - use cases
-- Today's meeting was canceled, next meeting is Thursday 29th
+- Started Specification Document
+
+### Key learning:
+- Used AI (Claude) to help rewrite wordy sections of Vision Document, but reviewed each suggestion carefully to ensure accuracy and maintain my voice
+- Realized my initial drafts were too corporate/jargon-heavy - fell into trap of trying to sound "professional" instead of being clear
+- Understanding the difference between simple use cases vs. complex implementation - the real challenge is in the HOW (vocabulary extraction algorithm, client-side processing)
