@@ -68,3 +68,25 @@
 - Used AI (Claude) to help rewrite wordy sections of Vision Document, but reviewed each suggestion carefully to ensure accuracy and maintain my voice
 - Realized my initial drafts were too corporate/jargon-heavy - fell into trap of trying to sound "professional" instead of being clear
 - Understanding the difference between simple use cases vs. complex implementation - the real challenge is in the HOW (vocabulary extraction algorithm, client-side processing)
+
+## Sunday, February 9, 2025 - First Working Code
+
+**What I built today:**
+- Created basic project structure (src/, package.json)
+- Built file upload interface with HTML/CSS
+- Implemented text extraction using FileReader API
+- Learned about CORS and why ES Modules need HTTP server
+
+**Technical decisions:**
+- Used vanilla JavaScript with ES Modules as planned
+- FileReader API works perfectly for client-side processing
+- Python's http.server is sufficient for local development
+
+**Challenges solved:**
+- CORS error when opening HTML directly - fixed by running local server
+- Understanding the difference between file:// and http:// protocols
+
+**Next steps:**
+- Integrate Compromise.js for vocabulary extraction
+- Implement word frequency analysis
+- Add stopword filtering
