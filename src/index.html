@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Language Trainer - Lecturer Tool</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Exam Language Trainer</h1>
+        <p>Upload an exam paper to extract vocabulary</p>
+        
+        <div class="upload-section">
+            <input type="file" id="fileInput" accept=".txt">
+            <button id="uploadBtn">Process File</button>
+        </div>
+        
+        <div id="output" class="output-section">
+            <!-- Extracted text will appear here -->
+        </div>
+    </div>
+    
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
