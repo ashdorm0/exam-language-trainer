@@ -69,24 +69,33 @@
 - Realized my initial drafts were too corporate/jargon-heavy - fell into trap of trying to sound "professional" instead of being clear
 - Understanding the difference between simple use cases vs. complex implementation - the real challenge is in the HOW (vocabulary extraction algorithm, client-side processing)
 
-## Sunday, February 9, 2025 - First Working Code
 
-**What I built today:**
-- Created basic project structure (src/, package.json)
-- Built file upload interface with HTML/CSS
-- Implemented text extraction using FileReader API
-- Learned about CORS and why ES Modules need HTTP server
+## Monday, February 9, 2026 - Vocabulary Extraction Working!
 
-**Technical decisions:**
-- Used vanilla JavaScript with ES Modules as planned
-- FileReader API works perfectly for client-side processing
-- Python's http.server is sufficient for local development
+**What I built:**
+- Integrated compromise.js for NLP processing
+- Integrated stopword library for filtering common words
+- Built vocabulary extraction that identifies difficult words from exam text
 
-**Challenges solved:**
-- CORS error when opening HTML directly - fixed by running local server
-- Understanding the difference between file:// and http:// protocols
+**Technical challenges solved:**
+- Module import issues: Learned difference between ES modules, UMD, and global scripts
+- Compromise.js needed to be loaded as global script, not ES module
+- Stopword worked as ES module import
+- Text processing: Had to use .terms() instead of .nouns()/.verbs() to avoid phrase concatenation
+
+**Key learning:**
+Each library has different module formats. Check the dist/ folder and try different approaches rather than assuming one way will work.
+
+**Current functionality:**
+- Upload .txt file ✓
+- Extract text ✓
+- Process with NLP ✓
+- Filter stopwords ✓
+- Display unique vocabulary list ✓
 
 **Next steps:**
-- Integrate Compromise.js for vocabulary extraction
-- Implement word frequency analysis
-- Add stopword filtering
+- Add word selection UI (checkboxes for lecturer to choose words)
+- Generate quiz questions from selected words
+- Save approved quiz to server
+
+**Time spent today:** ~4 hours
