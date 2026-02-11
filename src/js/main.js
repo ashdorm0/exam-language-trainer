@@ -57,23 +57,81 @@ document.addEventListener('DOMContentLoaded', () => {
             const uniqueVocab = [...new Set(vocabulary)];
 
             // Step 6: Display results
-            output.innerHTML = `
-                <h3>Extracted Vocabulary (${uniqueVocab.length} unique words):</h3>
-                <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px;">
-                    ${uniqueVocab
-                        .map(
-                            (word) => `
-                                <span style="background: #e3f2fd; padding: 5px 10px; border-radius: 4px;">
-                                    ${word}
-                                </span>
-                            `
-                        )
-                        .join('')}
+           output.innerHTML = `
+                <h3>Select vocabulary words to include in quiz:</h3>
+                <p style="color: #666; margin-bottom: 15px;">
+                    Found ${uniqueVocab.length} vocabulary words
+                </p>
+
+                <div style="margin-bottom: 20px;">
+                    <button id="selectAllBtn" style="margin-right: 10px;">Select All</button>
+                    <button id="deselectAllBtn" style="margin-right: 10px;">Deselect All</button>
+                    <button id="generateQuizBtn" style="background-color: #28a745;">
+                        Generate Quiz (<span id="selectedCount">0</span> selected)
+                    </button>
+                </div>
+
+                <div id="wordList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;">
+                    ${uniqueVocab.map(word => `
+                        <label style="display: flex; align-items: center; padding: 8px; background: #f5f5f5; border-radius: 4px; cursor: pointer;">
+                            <input type="checkbox" class="word-checkbox" value="${word}" style="margin-right: 8px;">
+                            <span>${word}</span>
+                        </label>
+                    `).join('')}
                 </div>
             `;
-        };
+                // Step 7: Add event listeners for the new buttons
+                setupWordSelection(uniqueVocab);
+}
+    
 
         // Start reading the file as text
         reader.readAsText(file);
     });
 });
+
+// Function to handle word selection logic
+    function setupWordSelection(vocabularyWords) {
+        const checkboxes = document.querySelectorAll('.word-checkbox');
+        const selectAllBtn = document.getElementById('selectAllBtn');
+        const deselectAllBtn = document.getElementById('deselectAllBtn');
+        const generateQuizBtn = document.getElementById('generateQuizBtn');
+        const selectedCountSpan = document.getElementById('selectedCount');
+        
+        // Update count when checkboxes change
+        function updateCount() {
+            const selectedCount = document.querySelectorAll('.word-checkbox:checked').length;
+            selectedCountSpan.textContent = selectedCount;
+        }
+        
+        // Select all button
+        selectAllBtn.addEventListener('click', () => {
+            checkboxes.forEach(cb => cb.checked = true);
+            updateCount();
+        });
+        
+        // Deselect all button
+        deselectAllBtn.addEventListener('click', () => {
+            checkboxes.forEach(cb => cb.checked = false);
+            updateCount();
+        });
+        
+        // Update count when individual checkboxes change
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', updateCount);
+        });
+        
+        // Generate quiz button
+        generateQuizBtn.addEventListener('click', () => {
+            const selectedWords = Array.from(document.querySelectorAll('.word-checkbox:checked'))
+                .map(cb => cb.value);
+            
+            if (selectedWords.length === 0) {
+                alert('Please select at least one word');
+                return;
+            }
+            
+            console.log('Selected words:', selectedWords);
+            alert(`Quiz generation coming soon! You selected ${selectedWords.length} words.`);
+        });
+    }
