@@ -99,3 +99,38 @@ Each library has different module formats. Check the dist/ folder and try differ
 - Save approved quiz to server
 
 **Time spent today:** ~4 hours
+
+## Wednesday, February 11, 2026 - Vocabulary Extraction Working!
+
+**What I built:**
+- Integrated Claude API (Haiku model) for MCQ generation
+- Created Node.js/Express backend to handle API calls securely
+- Connected frontend to backend via fetch API
+- Implemented "Regenerate" button to go back to word selection
+- Quiz preview shows generated questions with correct answers highlighted
+
+**Technical decisions:**
+- Backend server keeps API key secret (never exposed to browser)
+- Used async/await for API calls
+- Stored vocabulary in global scope for regeneration feature
+- Refactored duplicate code into reusable `showWordSelection` function
+
+**Challenges solved:**
+- Scope issues with `currentVocabulary` - moved to global scope
+- API model name was wrong - used correct Haiku model identifier
+- Security: API key stored in .env file, never committed to git
+
+**Current functionality:**
+- Upload .txt file 
+- Extract vocabulary 
+- Select words with checkboxes 
+- Generate quiz questions via Claude API 
+- Preview quiz 
+- Regenerate with different word selection 
+
+**Next steps:**
+- Save quiz to Firebase
+- Generate shareable URL and QR code
+- Build student quiz interface
+
+**Time spent today:** ~3 hours
