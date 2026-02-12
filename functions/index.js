@@ -5,9 +5,43 @@ const cors = require('cors');
 
 const app = express();
 
+// Simple rate limiting: track recent requests by IP
+const requestCounts = new Map();
+const RATE_LIMIT = 10; // Max requests per IP
+const RATE_WINDOW = 60 * 60 * 1000; // 1 hour in milliseconds
+
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Rate limiting middleware
+app.use((req, res, next) => {
+    const ip = req.ip || req.connection.remoteAddress;
+    const now = Date.now();
+    
+    // Get or create request history for this IP
+    if (!requestCounts.has(ip)) {
+        requestCounts.set(ip, []);
+    }
+    
+    const requests = requestCounts.get(ip);
+    
+    // Remove old requests outside the time window
+    const recentRequests = requests.filter(time => now - time < RATE_WINDOW);
+    
+    // Check if over limit
+    if (recentRequests.length >= RATE_LIMIT) {
+        return res.status(429).json({ 
+            error: 'Too many requests. Please try again later.' 
+        });
+    }
+    
+    // Add this request
+    recentRequests.push(now);
+    requestCounts.set(ip, recentRequests);
+    
+    next();
+});
 
 // Initialize Anthropic client
 const anthropic = new Anthropic({
