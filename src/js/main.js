@@ -1,5 +1,4 @@
-import { removeStopwords, eng } from '../../node_modules/stopword/dist/stopword.esm.mjs';
-
+import { removeStopwords, eng } from '../libs/stopword.esm.mjs';
 console.log('Compromise loaded:', nlp);
 console.log('Stopword loaded:', removeStopwords);
 
@@ -118,7 +117,7 @@ function setupWordSelection(vocabularyWords) {
 
         try {
             // Call backend API
-            const response = await fetch('http://localhost:3000/generate-quiz', {
+            const response = await fetch('https://us-central1-exam-language-trainer-3abec.cloudfunctions.net/api/generate-quiz', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
