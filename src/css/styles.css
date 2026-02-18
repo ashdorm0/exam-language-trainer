@@ -54,3 +54,25 @@ button:hover {
     border-radius: 4px;
     min-height: 100px;
 }
+
+.landing {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.landing h1 {
+    font-size: 2.2rem;
+    margin-bottom: 16px;
+}
+
+.landing p {
+    color: #666;
+    font-size: 1.1rem;
+    margin-bottom: 40px;
+}
+
+.start-btn {
+    font-size: 1.1rem;
+    padding: 14px 36px;
+    margin-top: 0;
+}
