@@ -102,6 +102,61 @@ Return ONLY the JSON array, no other text.`
     }
 });
 
+// Endpoint to filter technical terms
+app.post('/filter-words', async (req, res) => {
+    try {
+        const { words, subject } = req.body;
+        
+        if (!words || words.length === 0) {
+            return res.status(400).json({ error: 'No words provided' });
+        }
+        
+        if (!subject) {
+            return res.status(400).json({ error: 'No subject provided' });
+        }
+        
+        console.log(`Filtering ${words.length} words for subject: ${subject}`);
+        
+        // Call Claude API
+        const message = await anthropic.messages.create({
+            model: 'claude-3-5-haiku-20241022',
+            max_tokens: 2000,
+            messages: [{
+                role: 'user',
+                content: `You are filtering vocabulary for international students studying ${subject}.
+
+Students should ALREADY KNOW technical terms specific to ${subject}.
+Students STRUGGLE WITH general academic English vocabulary.
+
+Given this word list from a ${subject} exam:
+${words.join(', ')}
+
+Return ONLY the words that are general academic vocabulary (not ${subject}-specific terms).
+
+Rules:
+- REMOVE: Technical terms students should know for ${subject}
+- KEEP: General academic English (like "contradict", "facilitate", "subsequent")
+- KEEP: Formal/abstract vocabulary used across subjects
+
+Return as a simple JSON array of words: ["word1", "word2", "word3"]
+
+Only return the JSON array, nothing else.`
+            }]
+        });
+        
+        const responseText = message.content[0].text;
+        console.log('Claude response:', responseText);
+        
+        const filteredWords = JSON.parse(responseText);
+        
+        res.json({ words: filteredWords });
+        
+    } catch (error) {
+        console.error('Error filtering words:', error);
+        res.status(500).json({ error: 'Failed to filter words' });
+    }
+});
+
 // Export the Express app as a Firebase Function
 exports.api = functions.https.onRequest(
     {

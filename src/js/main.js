@@ -1,6 +1,29 @@
 import { removeStopwords, eng } from '../libs/stopword.esm.mjs';
+import { saveQuiz } from './saveQuiz.js';
+
 console.log('Compromise loaded:', nlp);
 console.log('Stopword loaded:', removeStopwords);
+
+// NEW FUNCTION: Send words to backend for filtering
+async function filterWordsWithClaude(words, subject) {
+    const response = await fetch('https://us-central1-exam-language-trainer-3abec.cloudfunctions.net/api/filter-words', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+            words: words,
+            subject: subject 
+        })
+    });
+    
+    if (!response.ok) {
+        throw new Error('Failed to filter words');
+    }
+    
+    const data = await response.json();
+    return data.words; // Array of filtered words
+}
 
 let currentVocabulary = [];
 
@@ -17,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // When user clicks the button
     uploadBtn.addEventListener('click', () => {
         const file = fileInput.files[0]; // Get the selected file
-
+        const subject = document.getElementById('subjectSelect').value; // Get selected subject
         // Check if a file was selected
         if (!file) {
             output.innerHTML = '<p style="color: red;">Please select a file first</p>';
@@ -29,40 +52,41 @@ document.addEventListener('DOMContentLoaded', () => {
             output.innerHTML = '<p style="color: red;">Please upload a .txt file</p>';
             return;
         }
-
+        // Add this console.log to test
+        console.log('Selected subject:', subject);
         // Read the file using FileReader API
         const reader = new FileReader();
 
-        reader.onload = (e) => {
+        reader.onload = async (e) => {  // Note: added 'async'
             const text = e.target.result;
 
-            // Step 1: Process with compromise
+            // Extract ALL words (no filtering yet)
             const doc = nlp(text);
-
-            // Step 2: Get ALL terms (individual words)
             const allTerms = doc.terms().out('array');
 
-            // Step 3: Clean each word - remove punctuation
             const cleanedWords = allTerms
-                .map((word) => word.toLowerCase().replace(/[.,!?;:()\-]/g, '').trim())
-                .filter((word) => {
-                    return (
-                        word.length > 2 &&
-                        !/^\d+$/.test(word) &&
-                        word !== 'question' &&
-                        word !== 'questions'
-                    );
+                .map(word => word.toLowerCase().replace(/[.,!?;:()\-'"]/g, '').trim())
+                .filter(word => {
+                    return word.length >= 4 && /^[a-z]+$/.test(word);
                 });
-
-            // Step 4: Remove stopwords
-            const vocabulary = removeStopwords(cleanedWords, eng);
-
-            // Step 5: Remove duplicates
-            const uniqueVocab = [...new Set(vocabulary)];
-            currentVocabulary = uniqueVocab;
-
-            // Step 6: Display results
-            showWordSelection(uniqueVocab);
+            
+            const withoutStopwords = removeStopwords(cleanedWords, eng);
+            const uniqueWords = [...new Set(withoutStopwords)];
+            
+            console.log(`Extracted ${uniqueWords.length} words locally`);
+            console.log('First 10 words:', uniqueWords.slice(0, 10));
+            
+            // NOW send to backend for filtering
+            output.innerHTML = '<p>Filtering technical terms with Claude API...</p>';
+            
+            try {
+                const filtered = await filterWordsWithClaude(uniqueWords, subject);
+                console.log(`Claude returned ${filtered.length} academic words`);
+                showWordSelection(filtered);
+            } catch (error) {
+                console.error('Error:', error);
+                output.innerHTML = '<p style="color: red;">Error filtering words. Check console.</p>';
+            }
         };
 
         // Start reading the file as text
@@ -214,11 +238,30 @@ function displayQuiz(questions) {
         </div>
     `;
 
-    // Add event listeners
-    document.getElementById('approveQuizBtn').addEventListener('click', () => {
-        alert('Save quiz functionality coming next!');
-        console.log('Quiz to save:', questions);
-    });
+   document.getElementById('approveQuizBtn').addEventListener('click', async () => {
+    const title = prompt('Enter a title for this quiz:');
+    if (!title) return;
+
+    const btn = document.getElementById('approveQuizBtn');
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+
+    try {
+        const quizId = await saveQuiz(title, questions);
+        const quizUrl = `${window.location.origin}/quiz.html?id=${quizId}`;
+
+        document.getElementById('output').innerHTML = `
+            <h2>Quiz Saved!</h2>
+            <p>Share this link with your students:</p>
+            <a href="${quizUrl}" target="_blank">${quizUrl}</a>
+        `;
+    } catch (error) {
+        console.error('Save failed:', error);
+        alert('Failed to save quiz. Check console.');
+        btn.disabled = false;
+        btn.textContent = 'Approve & Save Quiz';
+    }
+});
 
     document.getElementById('regenerateBtn').addEventListener('click', () => {
         showWordSelection(currentVocabulary);
