@@ -7,7 +7,7 @@ const app = express();
 
 // Simple rate limiting: track recent requests by IP
 const requestCounts = new Map();
-const RATE_LIMIT = 10; // Max requests per IP
+const RATE_LIMIT = 50; // Max requests per IP
 const RATE_WINDOW = 60 * 60 * 1000; // 1 hour in milliseconds
 
 // Middleware
@@ -92,7 +92,8 @@ Return ONLY the JSON array, no other text.`
         console.log('Claude response:', responseText);
         
         // Parse JSON response
-        const quizQuestions = JSON.parse(responseText);
+        const cleaned = responseText.replace(/```json\n?|\n?```/g, '').trim();
+        const quizQuestions = JSON.parse(cleaned);
         
         res.json({ questions: quizQuestions });
         
@@ -147,9 +148,10 @@ Only return the JSON array, nothing else.`
         const responseText = message.content[0].text;
         console.log('Claude response:', responseText);
         
-        const filteredWords = JSON.parse(responseText);
+        const cleaned = responseText.replace(/```json\n?|\n?```/g, '').trim();
+        const quizQuestions = JSON.parse(cleaned);
         
-        res.json({ words: filteredWords });
+        res.json({ words: quizQuestions });
         
     } catch (error) {
         console.error('Error filtering words:', error);
@@ -163,4 +165,5 @@ exports.api = functions.https.onRequest(
         secrets: ['ANTHROPIC_API_KEY']
     },
     app
-);
+); 
+ 

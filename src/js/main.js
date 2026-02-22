@@ -18,7 +18,9 @@ async function filterWordsWithClaude(words, subject) {
     });
     
     if (!response.ok) {
-        throw new Error('Failed to filter words');
+    const errorText = await response.text();
+    console.log('API error response:', errorText);
+    throw new Error('Failed to filter words');
     }
     
     const data = await response.json();
@@ -150,6 +152,8 @@ function setupWordSelection(vocabularyWords) {
             });
 
             if (!response.ok) {
+                const errorText = await response.text();
+                console.log('Generate quiz error:', errorText);
                 throw new Error('Failed to generate quiz');
             }
 
@@ -211,23 +215,26 @@ function displayQuiz(questions) {
         </p>
 
         ${questions.map((q, index) => `
-            <div style="background: #f9f9f9; padding: 20px; margin-bottom: 20px; border-radius: 8px;">
-                <h3>Question ${index + 1}: ${q.word}</h3>
-                <p style="font-size: 16px; margin: 15px 0;"><strong>${q.question}</strong></p>
-                <div style="margin-left: 20px;">
-                    ${q.options.map(opt => `
-                        <div style="margin: 10px 0;">
-                            <span style="font-weight: ${opt.startsWith(q.correct) ? 'bold' : 'normal'}; 
-                                         color: ${opt.startsWith(q.correct) ? '#28a745' : '#333'};">
-                                ${opt}
-                                ${opt.startsWith(q.correct) ? ' ✓' : ''}
-                            </span>
-                        </div>
-                    `).join('')}
+    <div style="background: #f9f9f9; padding: 20px; margin-bottom: 20px; border-radius: 8px;">
+        <h3>Question ${index + 1}: ${q.word}</h3>
+        <p style="font-size: 16px; margin: 15px 0;"><strong>${q.question}</strong></p>
+        <div style="margin-left: 20px;">
+            ${q.options.map(opt => `
+                <div style="margin: 10px 0;">
+                    <span style="font-weight: ${opt.startsWith(q.correct) ? 'bold' : 'normal'}; 
+                                 color: ${opt.startsWith(q.correct) ? '#28a745' : '#333'};">
+                        ${opt}
+                        ${opt.startsWith(q.correct) ? ' ✓' : ''}
+                    </span>
                 </div>
-            </div>
-        `).join('')}
-
+            `).join('')}
+        </div>
+        <button class="remove-btn" data-index="${index}" 
+            style="background:#dc3545; margin-top:10px; font-size:14px; padding:6px 14px;">
+            Remove this question
+        </button>
+    </div>
+`).join('')}
         <div style="margin-top: 30px;">
             <button id="approveQuizBtn" style="background-color: #28a745; font-size: 18px; padding: 15px 30px;">
                 Approve & Save Quiz
@@ -237,6 +244,14 @@ function displayQuiz(questions) {
             </button>
         </div>
     `;
+
+    document.querySelectorAll('.remove-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        const i = parseInt(e.target.dataset.index);
+        questions.splice(i, 1);
+        displayQuiz(questions);
+        });
+    });
 
    document.getElementById('approveQuizBtn').addEventListener('click', async () => {
     const title = prompt('Enter a title for this quiz:');
