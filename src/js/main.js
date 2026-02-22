@@ -84,7 +84,8 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const filtered = await filterWordsWithClaude(uniqueWords, subject);
                 console.log(`Claude returned ${filtered.length} academic words`);
-                showWordSelection(filtered);
+                const wordCount = parseInt(document.getElementById('wordCount').value) || 20;
+                showWordSelection(filtered.slice(0, wordCount));
             } catch (error) {
                 console.error('Error:', error);
                 output.innerHTML = '<p style="color: red;">Error filtering words. Check console.</p>';
