@@ -4,7 +4,7 @@ import { saveQuiz } from './saveQuiz.js';
 console.log('Compromise loaded:', nlp);
 console.log('Stopword loaded:', removeStopwords);
 
-// NEW FUNCTION: Send words to backend for filtering
+// Send words to backend for filtering
 async function filterWordsWithClaude(words, subject) {
     const response = await fetch('https://us-central1-exam-language-trainer-3abec.cloudfunctions.net/api/filter-words', {
         method: 'POST',
@@ -54,12 +54,11 @@ document.addEventListener('DOMContentLoaded', () => {
             output.innerHTML = '<p style="color: red;">Please upload a .txt file</p>';
             return;
         }
-        // Add this console.log to test
-        console.log('Selected subject:', subject);
+
         // Read the file using FileReader API
         const reader = new FileReader();
 
-        reader.onload = async (e) => {  // Note: added 'async'
+        reader.onload = async (e) => {  
             const text = e.target.result;
 
             // Extract ALL words (no filtering yet)
@@ -78,11 +77,12 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log(`Extracted ${uniqueWords.length} words locally`);
             console.log('First 10 words:', uniqueWords.slice(0, 10));
             
-            // NOW send to backend for filtering
+            // Send to backend for filtering
             output.innerHTML = '<p>Filtering technical terms with Claude API...</p>';
             
             try {
                 const filtered = await filterWordsWithClaude(uniqueWords, subject);
+                currentVocabulary = filtered;
                 console.log(`Claude returned ${filtered.length} academic words`);
                 const wordCount = parseInt(document.getElementById('wordCount').value) || 20;
                 showWordSelection(filtered.slice(0, wordCount));
@@ -279,7 +279,8 @@ function displayQuiz(questions) {
     }
 });
 
-    document.getElementById('regenerateBtn').addEventListener('click', () => {
+   document.getElementById('regenerateBtn').addEventListener('click', () => {
+        console.log('currentVocabulary length:', currentVocabulary.length);
         showWordSelection(currentVocabulary);
     });
 }
