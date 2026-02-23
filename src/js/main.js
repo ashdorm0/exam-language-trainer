@@ -73,6 +73,21 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const withoutStopwords = removeStopwords(cleanedWords, eng);
             const uniqueWords = [...new Set(withoutStopwords)];
+
+            //rank by uncommonness
+            const commonWordsResponse = await fetch ('../libs/common-words.txt');
+            const commonWordsText = await commonWordsResponse.text();
+
+            //Extract words into an array
+            const commonWords = commonWordsText.split('\n').map(w => w.trim().toLocaleLowerCase());
+
+            const rankedWords = uniqueWords.sort((a,b) => {
+                const aIndex = commonWords.indexOf(a);
+                const bIndex = commonWords.indexOf(b);
+                const aScore = aIndex == -1 ? 99999 : aIndex;
+                const bScore = bIndex == -1 ? 99999 : bIndex;
+                return bScore - aScore;
+            })
             
             console.log(`Extracted ${uniqueWords.length} words locally`);
             console.log('First 10 words:', uniqueWords.slice(0, 10));
@@ -81,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
             output.innerHTML = '<p>Filtering technical terms with Claude API...</p>';
             
             try {
-                const filtered = await filterWordsWithClaude(uniqueWords, subject);
+                const filtered = await filterWordsWithClaude(rankedWords, subject);
                 currentVocabulary = filtered;
                 console.log(`Claude returned ${filtered.length} academic words`);
                 const wordCount = parseInt(document.getElementById('wordCount').value) || 20;
