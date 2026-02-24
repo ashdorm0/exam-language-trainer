@@ -1,112 +1,229 @@
+/**
+ * quiz.js — Exam Language Trainer, Student Quiz Interface
+ *
+ * OVERVIEW:
+ * This file handles the entire student-facing quiz experience.
+ * It has four distinct screens, each rendered by its own function:
+ *
+ *   1. loadQuiz()     — fetches quiz from Firestore, shows Start button
+ *   2. showQuestion() — renders one MCQ at a time with option selection
+ *   3. showResults()  — score summary + words to review
+ *
+ * State is kept in module-level variables. Each screen function
+ * fully replaces the contents of .quiz-card.
+ */
+
 import { db } from './firebase.js';
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
-let currentQuestion = 0;
-let score = 0;
-let questions = [];
+// ── State ──────────────────────────────────────────────────────────────────────
+
+let questions      = [];
+let score          = 0;
+let wrongAnswers   = [];
 let selectedAnswer = null;
-let wrongAnswers = [];
+
+// ── Entry point ───────────────────────────────────────────────────────────────
 
 async function loadQuiz() {
-    // Step 1: Get quiz ID from URL
+    const card = document.querySelector('.quiz-card');
+
+    // Get quiz ID from URL query string: quiz.html?id=abc123
     const params = new URLSearchParams(window.location.search);
     const quizId = params.get('id');
 
     if (!quizId) {
-        document.querySelector('.container').innerHTML = '<p>No quiz found. Check your link.</p>';
+        showError(card, 'No quiz ID found in the URL. Check your link.');
         return;
     }
 
-    // Step 2: Fetch quiz from Firestore
-    const docRef = doc(db, "quizzes", quizId);
-    const docSnap = await getDoc(docRef);
+    try {
+        const docRef  = doc(db, 'quizzes', quizId);
+        const docSnap = await getDoc(docRef);
 
-    if (!docSnap.exists()) {
-        document.querySelector('.container').innerHTML = '<p>Quiz not found.</p>';
-        return;
+        if (!docSnap.exists()) {
+            showError(card, 'Quiz not found. It may have been deleted.');
+            return;
+        }
+
+        const quiz = docSnap.data();
+        questions  = quiz.questions;
+
+        console.log(`Quiz loaded: "${quiz.title}", ${questions.length} questions`);
+
+        // Show landing screen with Start button
+        showLanding(card, quiz.title);
+
+    } catch (err) {
+        console.error('Firestore error:', err);
+        showError(card, 'Failed to load quiz. Please check your connection.');
     }
-
-    const quiz = docSnap.data();
-    questions = quiz.questions;
-
-    console.log('Quiz loaded, questions:', questions.length);
-    console.log('Start button found:', document.querySelector('.start-btn'));   
-
-    document.querySelector('.start-btn').addEventListener('click', () => {
-        showQuestions(0);
-    });
-
 }
 
-function showQuestions(index){
-    const q = questions[index];
+// ── Screen: Landing ───────────────────────────────────────────────────────────
+
+function showLanding(card, title) {
+    card.innerHTML = `
+        <div class="landing text-center">
+            <div class="landing-icon"><i class="bi bi-book-half"></i></div>
+            <h2>${title}</h2>
+            <p>${questions.length} vocabulary questions.<br>Select the correct meaning for each word.</p>
+            <button class="btn-start" id="startBtn">
+                <i class="bi bi-play-fill"></i> Start Quiz
+            </button>
+        </div>
+    `;
+
+    document.getElementById('startBtn').addEventListener('click', () => {
+        // Reset state in case of retake
+        score        = 0;
+        wrongAnswers = [];
+        showQuestion(0);
+    });
+}
+
+// ── Screen: Question ──────────────────────────────────────────────────────────
+
+function showQuestion(index) {
+    const card = document.querySelector('.quiz-card');
+    const q    = questions[index];
     selectedAnswer = null;
 
-    document.querySelector('.container').innerHTML = `
-        <p style="color: #666;">Question ${index + 1} of ${questions.length}</p>
-        <h2>${q.question}</h2>
+    const isLast    = index + 1 === questions.length;
+    const progress  = Math.round((index / questions.length) * 100);
+
+    card.innerHTML = `
+        <div class="progress-label">Question ${index + 1} of ${questions.length}</div>
+        <div class="progress">
+            <div class="progress-bar" style="width: ${progress}%"></div>
+        </div>
+
+        <div class="word-tag">${q.word}</div>
+        <div class="question-text">${q.question}</div>
+
         <div id="options">
             ${q.options.map(opt => `
-                <div class="option" data-value="${opt[0]}" 
-                     style="padding: 12px; margin: 8px 0; background: #f5f5f5; 
-                            border-radius: 4px; cursor: pointer;">
+                <button class="option" data-value="${opt[0]}">
                     ${opt}
-                </div>
+                </button>
             `).join('')}
         </div>
-        <button id="nextBtn" disabled 
-                style="margin-top: 20px; opacity: 0.5;">
-            ${index + 1 === questions.length ? 'Submit Quiz' : 'Next'}
+
+        <button class="btn-next" id="nextBtn" disabled>
+            ${isLast ? 'Submit Quiz' : 'Next'} <i class="bi bi-arrow-right"></i>
         </button>
     `;
 
-    // Handle option selection
+    // Wire up option selection
     document.querySelectorAll('.option').forEach(option => {
         option.addEventListener('click', () => {
             // Clear previous selection
-            document.querySelectorAll('.option').forEach(o => o.style.background = '#f5f5f5');
-            // Highlight selected
-            option.style.background = '#cce5ff';
+            document.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+            // Mark selected
+            option.classList.add('selected');
             selectedAnswer = option.dataset.value;
-            // Enable next button
-            const nextBtn = document.getElementById('nextBtn');
-            nextBtn.disabled = false;
-            nextBtn.style.opacity = '1';
+            // Enable next
+            document.getElementById('nextBtn').disabled = false;
         });
     });
 
-    // Handle next/submit
+    // Wire up next/submit
     document.getElementById('nextBtn').addEventListener('click', () => {
+        // Score the answer
         if (selectedAnswer === q.correct) {
             score++;
         } else {
-            wrongAnswers.push(q);
+            // Store both the question and what the student actually picked
+            wrongAnswers.push({ ...q, studentAnswer: selectedAnswer });
         }
 
-        if (index + 1 === questions.length) {
+        if (isLast) {
             showResults();
         } else {
-            showQuestions(index + 1);
+            showQuestion(index + 1);
         }
     });
 }
 
+// ── Screen: Results ───────────────────────────────────────────────────────────
+
 function showResults() {
-    document.querySelector('.container').innerHTML = `
-        <h2>Quiz Complete!</h2>
-        <p>You scored <strong>${score} out of ${questions.length}</strong></p>
-        
+    const card    = document.querySelector('.quiz-card');
+    const percent = Math.round((score / questions.length) * 100);
+
+    card.innerHTML = `
+        <div class="text-center mb-4">
+            <div class="score-circle">
+                <span class="score-number">${score}/${questions.length}</span>
+                <span class="score-label">${percent}%</span>
+            </div>
+            <h2 style="font-family:Arial,sans-serif; font-size:1.4rem; font-weight:700;">
+                ${scoreMessage(percent)}
+            </h2>
+        </div>
+
         ${wrongAnswers.length > 0 ? `
-            <h3>Words to review:</h3>
+            <h3 style="font-family:Arial,sans-serif; font-size:1rem; font-weight:700; margin-bottom:0.75rem;">
+                <i class="bi bi-journal-text"></i> Words to review (${wrongAnswers.length})
+            </h3>
             ${wrongAnswers.map(q => `
-                <div style="background: #fff3cd; padding: 12px; margin: 8px 0; border-radius: 4px;">
-                    <p><strong>${q.word}</strong></p>
-                    <p>${q.question}</p>
-                    <p style="color: #28a745;">Correct answer: ${q.options.find(o => o.startsWith(q.correct))}</p>
+                <div class="review-card">
+                    <div class="word">${q.word}</div>
+                    <div class="question-q">${q.question}</div>
+                    <div style="font-family:Arial,sans-serif; font-size:0.875rem; color:#991b1b; margin-bottom:0.3rem;">
+                        <i class="bi bi-x-circle-fill"></i>
+                        Your answer: ${q.options.find(o => o.startsWith(q.studentAnswer))}
+                    </div>
+                    <div class="correct-answer">
+                        <i class="bi bi-check-circle-fill"></i>
+                        Correct answer: ${q.options.find(o => o.startsWith(q.correct))}
+                    </div>
                 </div>
             `).join('')}
-        ` : '<p>Perfect score! 🎉</p>'}
+        ` : `
+            <div class="text-center" style="padding:1rem;">
+                <p style="font-family:Arial,sans-serif; font-size:1.1rem;">
+                    Perfect score! 🎉 You're well prepared.
+                </p>
+            </div>
+        `}
+
+        <div class="text-center mt-3">
+            <button class="btn-retake" id="retakeBtn">
+                <i class="bi bi-arrow-repeat"></i> Retake Quiz
+            </button>
+        </div>
+    `;
+
+    document.getElementById('retakeBtn').addEventListener('click', () => {
+        score        = 0;
+        wrongAnswers = [];
+        // Shuffle questions for retake
+        questions = [...questions].sort(() => Math.random() - 0.5);
+        showQuestion(0);
+    });
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+/** Returns an encouraging message based on score percentage */
+function scoreMessage(percent) {
+    if (percent === 100) return 'Perfect score!';
+    if (percent >= 80)  return 'Great work!';
+    if (percent >= 60)  return 'Good effort — review the words below.';
+    return 'Keep practising — you\'ll get there.';
+}
+
+/** Renders a full-card error message */
+function showError(card, message) {
+    card.innerHTML = `
+        <div class="state-message">
+            <i class="bi bi-exclamation-circle text-danger"></i>
+            <p>${message}</p>
+        </div>
     `;
 }
+
+// ── Init ──────────────────────────────────────────────────────────────────────
 
 loadQuiz();

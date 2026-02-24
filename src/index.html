@@ -3,49 +3,533 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Exam Language Trainer - Lecturer Tool</title>
-    <link rel="stylesheet" href="css/styles.css">
+    <title>Exam Language Trainer — Lecturer Tool</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- NLP libraries (loaded globally so main.js can use them) -->
     <script src="libs/compromise.js"></script>
-    <script type="module" src="js/main.js"></script>
+
+    <style>
+        /* ── Design direction: clean institutional, trustworthy academic tool ── */
+        :root {
+            --primary: #1a56db;
+            --primary-dark: #1341b0;
+            --success: #0e9f6e;
+            --danger: #e02424;
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --border: #e2e8f0;
+            --text: #1e293b;
+            --muted: #64748b;
+            --step-done: #0e9f6e;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Georgia', 'Times New Roman', serif;
+            min-height: 100vh;
+        }
+
+        /* ── Header ── */
+        .app-header {
+            background: var(--primary);
+            color: white;
+            padding: 1.25rem 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .app-header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            margin: 0;
+            font-family: 'Georgia', serif;
+        }
+        .app-header .subtitle {
+            font-size: 0.85rem;
+            opacity: 0.8;
+            font-family: Arial, sans-serif;
+            margin: 0;
+        }
+        .header-lock {
+            font-size: 1.2rem;
+            margin-right: 0.5rem;
+            opacity: 0.9;
+        }
+
+        /* ── Step indicator ── */
+        .step-bar {
+            background: white;
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 0;
+        }
+        .step-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: Arial, sans-serif;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--muted);
+            transition: color 0.2s;
+        }
+        .step-item.active {
+            color: var(--primary);
+        }
+        .step-item.done {
+            color: var(--step-done);
+        }
+        .step-num {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid currentColor;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            flex-shrink: 0;
+        }
+        .step-divider {
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+            margin: 0 0.5rem;
+        }
+
+        /* ── Cards ── */
+        .card {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+        .card-header {
+            background: #f1f5f9;
+            border-bottom: 1px solid var(--border);
+            border-radius: 10px 10px 0 0 !important;
+            font-family: Arial, sans-serif;
+            font-weight: 600;
+            font-size: 0.9rem;
+            padding: 0.85rem 1.25rem;
+        }
+        .step-badge {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 20px;
+            margin-right: 0.5rem;
+            font-weight: 700;
+            font-family: Arial, sans-serif;
+        }
+
+        /* ── Upload zone ── */
+        .upload-zone {
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.2s;
+            cursor: pointer;
+            background: #fafafa;
+        }
+        .upload-zone:hover, .upload-zone.dragover {
+            border-color: var(--primary);
+            background: #eff6ff;
+        }
+        .upload-zone .icon {
+            font-size: 2.5rem;
+            color: var(--muted);
+            margin-bottom: 0.5rem;
+        }
+        .upload-zone p {
+            font-family: Arial, sans-serif;
+            color: var(--muted);
+            font-size: 0.9rem;
+            margin: 0;
+        }
+        #fileInput { display: none; }
+        .file-selected {
+            font-family: Arial, sans-serif;
+            font-size: 0.85rem;
+            color: var(--success);
+            margin-top: 0.5rem;
+            display: none;
+        }
+
+        /* ── Security notice ── */
+        .security-badge {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 6px;
+            padding: 0.6rem 0.9rem;
+            font-family: Arial, sans-serif;
+            font-size: 0.8rem;
+            color: #166534;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        /* ── Buttons ── */
+        .btn-extract {
+            background: var(--primary);
+            color: white;
+            border: none;
+            font-family: Arial, sans-serif;
+            font-weight: 600;
+            font-size: 0.95rem;
+            padding: 0.65rem 1.5rem;
+            border-radius: 6px;
+            transition: background 0.15s;
+        }
+        .btn-extract:hover:not(:disabled) { background: var(--primary-dark); color: white; }
+        .btn-extract:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .btn-save {
+            background: var(--success);
+            color: white;
+            border: none;
+            font-family: Arial, sans-serif;
+            font-weight: 600;
+            border-radius: 6px;
+        }
+        .btn-save:hover:not(:disabled) { background: #0a8060; color: white; }
+        .btn-save:disabled { opacity: 0.5; }
+
+        /* ── Quiz question cards ── */
+        .question-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 1rem;
+            position: relative;
+            transition: box-shadow 0.2s;
+        }
+        .question-card:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+        .question-num {
+            font-family: Arial, sans-serif;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.4rem;
+        }
+        .question-text {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            font-family: Arial, sans-serif;
+        }
+        .option-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .option-list li {
+            font-family: Arial, sans-serif;
+            font-size: 0.88rem;
+            padding: 4px 0;
+            color: var(--text);
+        }
+        .option-list li.correct {
+            color: var(--success);
+            font-weight: 600;
+        }
+        .word-tag {
+            display: inline-block;
+            background: #eff6ff;
+            color: var(--primary);
+            font-family: Arial, sans-serif;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.4rem;
+        }
+        .btn-remove {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: 1px solid #fecaca;
+            color: var(--danger);
+            border-radius: 4px;
+            font-size: 0.78rem;
+            font-family: Arial, sans-serif;
+            padding: 3px 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .btn-remove:hover {
+            background: #fef2f2;
+        }
+
+        /* ── Pool counter ── */
+        .pool-info {
+            font-family: Arial, sans-serif;
+            font-size: 0.82rem;
+            color: var(--muted);
+            margin-bottom: 1rem;
+        }
+
+        /* ── Spinner ── */
+        .spinner-text {
+            font-family: Arial, sans-serif;
+            font-size: 0.9rem;
+            color: var(--muted);
+            margin-left: 0.5rem;
+        }
+
+        /* ── Modal word chips ── */
+        .word-chip {
+            display: inline-block;
+            background: #f1f5f9;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 3px 10px;
+            font-family: Arial, sans-serif;
+            font-size: 0.8rem;
+            margin: 3px;
+            color: var(--text);
+        }
+
+        /* ── Success state ── */
+        .share-box {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 8px;
+            padding: 1.5rem;
+        }
+        .share-url {
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            word-break: break-all;
+            color: var(--primary);
+        }
+
+        /* ── Hidden utility ── */
+        .d-none { display: none !important; }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Exam Language Trainer</h1>
-        <p>Upload an exam paper to extract vocabulary</p>
-        
-        <div class="upload-section">
-            <input type="file" id="fileInput" accept=".txt">
-            <button id="uploadBtn">Process File</button>
-        </div>
-        
-        <!-- Subject Selection -->
-        <div class="subject-section" style="margin: 20px 0;">
-            <label for="subjectSelect" style="font-weight: bold; display: block; margin-bottom: 10px;">
-                Select Exam Subject:
-            </label>
-            <select id="subjectSelect" style="padding: 10px; font-size: 16px; width: 100%; max-width: 400px;">
-                <option value="Software Engineering">Software Engineering</option>
-                <option value="Computer Science">Computer Science</option>
-                <option value="Business Studies">Business Studies</option>
-                <option value="Mathematics">Mathematics</option>
-                <option value="Biology">Biology</option>
-                <option value="Economics">Economics</option>
-            </select>
-        </div>
 
-        <div style="margin: 20px 0;">
-            <label for="wordCount" style="font-weight: bold; display: block; margin-bottom: 10px;">
-                Number of words to display:
-            </label>
-            <input type="number" id="wordCount" min="5" max="50" value="20" 
-                   style="padding: 10px; font-size: 16px; width: 100px;">
+    <!-- ══ Header ══ -->
+    <header class="app-header">
+        <div class="container">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h1><span class="header-lock"></span>Exam Language Trainer</h1>
+                    <p class="subtitle">Vocabulary Quiz Generator</p>
+                </div>
+                <div class="security-badge" style="font-size:0.75rem;">
+                    <i class="bi bi-shield-check"></i>
+                    Exam papers never leave your browser
+                </div>
+            </div>
         </div>
+    </header>
 
-        <div id="output" class="output-section">
-            <!-- Extracted text will appear here -->
+    <!-- ══ Step Bar ══ -->
+    <div class="step-bar">
+        <div class="container">
+            <div class="d-flex align-items-center">
+                <div class="step-item active" id="step-indicator-1">
+                    <div class="step-num">1</div>
+                    <span>Upload &amp; Extract</span>
+                </div>
+                <div class="step-divider"></div>
+                <div class="step-item" id="step-indicator-2">
+                    <div class="step-num">2</div>
+                    <span>Confirm Words</span>
+                </div>
+                <div class="step-divider"></div>
+                <div class="step-item" id="step-indicator-3">
+                    <div class="step-num">3</div>
+                    <span>Review Quiz</span>
+                </div>
+                <div class="step-divider"></div>
+                <div class="step-item" id="step-indicator-4">
+                    <div class="step-num">4</div>
+                    <span>Save &amp; Share</span>
+                </div>
+            </div>
         </div>
     </div>
-    
-    
+
+    <!-- ══ Main Content ══ -->
+    <main class="container py-4">
+
+        <!-- ── STEP 1: Upload ── -->
+        <div id="section-upload">
+                <div class="card-body p-4">
+
+                    <!-- Security notice -->
+                    <div class="security-badge mb-4">
+                        <i class="bi bi-shield-lock-fill"></i>
+                        <strong>Your exam paper stays on your computer.</strong>
+                        Vocabulary is extracted locally in your browser. Only word lists — never exam content — are sent to the server.
+                    </div>
+
+                    <!-- Upload zone -->
+                    <div class="upload-zone mb-3" id="uploadZone">
+                        <div class="icon"><i class="bi bi-file-earmark-text"></i></div>
+                        <p><strong>Click to choose a file</strong> or drag and drop here</p>
+                        <p style="margin-top:0.25rem; font-size:0.78rem;">Plain text (.txt) files supported in Iteration 1</p>
+                        <input type="file" id="fileInput" accept=".txt">
+                    </div>
+                    <div class="file-selected" id="fileSelected">
+                        <i class="bi bi-check-circle-fill"></i> <span id="fileName"></span>
+                    </div>
+
+                    <!-- Subject input -->
+                    <div class="mb-3 mt-3">
+                        <label for="subjectInput" class="form-label fw-semibold" style="font-family:Arial,sans-serif; font-size:0.9rem;">
+                            Exam Subject
+                        </label>
+                        <input type="text"
+                               class="form-control"
+                               id="subjectInput"
+                               placeholder="e.g. Software Engineering, Economics, Biology…"
+                               style="font-family:Arial,sans-serif; max-width:400px;">
+                        <div class="form-text" style="font-family:Arial,sans-serif;">
+                            This tells Claude which technical terms to ignore — students of this subject already know them.
+                        </div>
+                    </div>
+
+                    <!-- Extract button -->
+                    <button class="btn btn-extract" id="extractBtn" disabled>
+                        <i class="bi bi-cpu"></i> Extract Vocabulary
+                    </button>
+
+                    <!-- Spinner (hidden until processing) -->
+                    <div class="d-flex align-items-center mt-3 d-none" id="spinner-extract">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                        <span class="spinner-text">Extracting vocabulary locally…</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── STEP 3: Quiz Preview (hidden initially) ── -->
+        <div id="section-quiz" class="d-none">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>
+                        <span class="step-badge">Step 3</span> Review Quiz Questions
+                    </span>
+                    <span class="pool-info mb-0" id="poolInfo"></span>
+                </div>
+                <div class="card-body p-4">
+                    <p style="font-family:Arial,sans-serif; font-size:0.88rem; color:var(--muted); margin-bottom:1.25rem;">
+                        Showing 5 questions at a time. Remove any you don't want — a replacement will be pulled from the remaining pool automatically.
+                    </p>
+
+                    <!-- Spinner for API call -->
+                    <div class="d-flex align-items-center d-none" id="spinner-api">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                        <span class="spinner-text">Generating 30 questions with Claude — this takes about 10 seconds…</span>
+                    </div>
+
+                    <!-- Question display area -->
+                    <div id="questionsDisplay"></div>
+
+                    <!-- Save button -->
+                    <div class="mt-4 d-none" id="saveSection">
+                        <button class="btn btn-save btn-lg" id="saveBtn">
+                            <i class="bi bi-cloud-upload"></i> Approve &amp; Save Quiz
+                        </button>
+                        <p class="mt-2" style="font-family:Arial,sans-serif; font-size:0.8rem; color:var(--muted);">
+                            Only the approved questions are saved — no exam content is stored.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Save success -->
+            <div id="section-saved" class="d-none">
+                <div class="share-box">
+                    <h5 style="font-family:Arial,sans-serif; color: var(--success);">
+                        <i class="bi bi-check-circle-fill"></i> Quiz saved successfully!
+                    </h5>
+                    <p style="font-family:Arial,sans-serif; font-size:0.9rem; margin-top:0.75rem;">
+                        Share this link with your students:
+                    </p>
+                    <div class="share-url" id="shareUrl"></div>
+                    <button class="btn btn-sm mt-2" id="copyBtn"
+                            style="font-family:Arial,sans-serif; background:#e2e8f0;">
+                        <i class="bi bi-clipboard"></i> Copy link
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ══ Confirmation Modal ══ -->
+    <!--
+        WHY THIS MODAL EXISTS (key point for supervisor):
+        The lecturer sees and approves the exact word list before anything
+        is sent to the server. This is a deliberate security gate —
+        the lecturer maintains control over what leaves their browser.
+        It also makes the two-phase architecture visible to the user:
+        "local extraction happened, now you're about to make an API call."
+    -->
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmModalLabel" style="font-family:Arial,sans-serif; font-weight:700;">
+                        <i class="bi bi-shield-check text-success"></i>
+                        Confirm Words to Send
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="security-badge mb-3">
+                        <i class="bi bi-info-circle"></i>
+                        <span>
+                            <strong>Security checkpoint.</strong> These are the only words that will leave your browser.
+                            No exam questions, sentences, or context are included.
+                        </span>
+                    </div>
+                    <p style="font-family:Arial,sans-serif; font-size:0.88rem; color:var(--muted);">
+                        Claude will select the 30 hardest general academic words from this list and generate quiz questions.
+                        Subject-specific technical terms will be filtered out.
+                    </p>
+                    <div id="wordChips" style="line-height:2;"></div>
+                    <p class="mt-3" style="font-family:Arial,sans-serif; font-size:0.82rem; color:var(--muted);">
+                        <i class="bi bi-info-circle"></i>
+                        <span id="wordCountNote"></span>
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"
+                            style="font-family:Arial,sans-serif;">
+                        Cancel — go back
+                    </button>
+                    <button type="button" class="btn btn-extract" id="confirmSendBtn"
+                            style="font-family:Arial,sans-serif;">
+                        <i class="bi bi-send"></i> Send to Claude &amp; Generate Quiz
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Stopword library -->
+    <script type="module" src="js/main.js"></script>
+
 </body>
 </html>

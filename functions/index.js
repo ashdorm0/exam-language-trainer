@@ -5,165 +5,110 @@ const cors = require('cors');
 
 const app = express();
 
-// Simple rate limiting: track recent requests by IP
+// ─── Rate Limiting ────────────────────────────────────────────────────────────
+// Simple in-memory store: tracks request timestamps per IP address.
+// Each IP gets a sliding 1-hour window. After 50 requests, further requests
+// are rejected with HTTP 429. This protects against runaway API costs.
 const requestCounts = new Map();
-const RATE_LIMIT = 50; // Max requests per IP
-const RATE_WINDOW = 60 * 60 * 1000; // 1 hour in milliseconds
+const RATE_LIMIT = 50;
+const RATE_WINDOW = 60 * 60 * 1000; // 1 hour in ms
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Rate limiting middleware
 app.use((req, res, next) => {
     const ip = req.ip || req.connection.remoteAddress;
     const now = Date.now();
-    
-    // Get or create request history for this IP
-    if (!requestCounts.has(ip)) {
-        requestCounts.set(ip, []);
+
+    if (!requestCounts.has(ip)) requestCounts.set(ip, []);
+    const recent = requestCounts.get(ip).filter(t => now - t < RATE_WINDOW);
+
+    if (recent.length >= RATE_LIMIT) {
+        return res.status(429).json({ error: 'Too many requests. Please try again later.' });
     }
-    
-    const requests = requestCounts.get(ip);
-    
-    // Remove old requests outside the time window
-    const recentRequests = requests.filter(time => now - time < RATE_WINDOW);
-    
-    // Check if over limit
-    if (recentRequests.length >= RATE_LIMIT) {
-        return res.status(429).json({ 
-            error: 'Too many requests. Please try again later.' 
-        });
-    }
-    
-    // Add this request
-    recentRequests.push(now);
-    requestCounts.set(ip, recentRequests);
-    
+
+    recent.push(now);
+    requestCounts.set(ip, recent);
     next();
 });
 
-// Initialize Anthropic client
+// ─── Anthropic Client ─────────────────────────────────────────────────────────
 const anthropic = new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-// Endpoint to generate quiz
+// ─── Single Endpoint: /generate-quiz ─────────────────────────────────────────
+//
+// WHY ONE ENDPOINT?
+// The old design had two separate API calls: /filter-words then /generate-quiz.
+// This doubled latency and cost. Now Claude does both jobs in a single prompt:
+//   1. Select the 30 hardest *general academic* words (ignoring subject jargon)
+//   2. Generate one MCQ per selected word
+//
+// This is more efficient and easier to explain: one call, one response, one cost.
+//
+// INPUT:  { words: string[], subject: string }
+// OUTPUT: { questions: Question[] }  (array of up to 30 MCQ objects)
+//
 app.post('/generate-quiz', async (req, res) => {
     try {
-        const { words } = req.body;
-        
-        if (!words || words.length === 0) {
-            return res.status(400).json({ error: 'No words provided' });
-        }
-        
-        console.log('Generating quiz for words:', words);
-        
-        // Call Claude API
-        const message = await anthropic.messages.create({
-            model: 'claude-haiku-4-5-20251001',
-            max_tokens: 1024,
-            messages: [{
-                role: 'user',
-                content: `Create a multiple-choice vocabulary quiz for these words: ${words.join(', ')}
-
-For each word, create ONE question with:
-- The word being tested
-- A clear question about the word's meaning or usage
-- 4 answer options (A, B, C, D)
-- Mark which option is correct
-
-Format as JSON array:
-[
-  {
-    "word": "oligopoly",
-    "question": "What is an oligopoly?",
-    "options": ["A) ...", "B) ...", "C) ...", "D) ..."],
-    "correct": "A"
-  }
-]
-
-Return ONLY the JSON array, no other text.`
-            }]
-        });
-        
-        // Extract the response
-        const responseText = message.content[0].text;
-        console.log('Claude response:', responseText);
-        
-        // Parse JSON response
-        const cleaned = responseText.replace(/```json\n?|\n?```/g, '').trim();
-        const quizQuestions = JSON.parse(cleaned);
-        
-        res.json({ questions: quizQuestions });
-        
-    } catch (error) {
-        console.error('Error generating quiz:', error);
-        res.status(500).json({ error: 'Failed to generate quiz' });
-    }
-});
-
-// Endpoint to filter technical terms
-app.post('/filter-words', async (req, res) => {
-    try {
         const { words, subject } = req.body;
-        
+
         if (!words || words.length === 0) {
             return res.status(400).json({ error: 'No words provided' });
         }
-        
         if (!subject) {
             return res.status(400).json({ error: 'No subject provided' });
         }
-        
-        console.log(`Filtering ${words.length} words for subject: ${subject}`);
-        
-        // Call Claude API
+
+        console.log(`Generating quiz: ${words.length} candidate words, subject: "${subject}"`);
+
         const message = await anthropic.messages.create({
             model: 'claude-haiku-4-5-20251001',
-            max_tokens: 2000,
+            max_tokens: 4096,
             messages: [{
                 role: 'user',
-                content: `You are filtering vocabulary for international students studying ${subject}.
-
-Students should ALREADY KNOW technical terms specific to ${subject}.
-Students STRUGGLE WITH general academic English vocabulary.
-
-Given this word list from a ${subject} exam:
+                content: `Here are words extracted from a ${subject} exam paper:
 ${words.join(', ')}
 
-Return ONLY the words that are general academic vocabulary (not ${subject}-specific terms).
+Your task has two parts:
+1. Select the 15 most difficult GENERAL ACADEMIC vocabulary words from this list.
+   - IGNORE ${subject}-specific technical terms that students of ${subject} should already know.
+   - KEEP general academic English words that appear across many subjects (e.g. "contradict", "subsequent", "facilitate", "preliminary").
+   - If fewer than 15 suitable words exist, return as many as you can.
 
-Rules:
-- REMOVE: Technical terms students should know for ${subject}
-- KEEP: General academic English (like "contradict", "facilitate", "subsequent")
-- KEEP: Formal/abstract vocabulary used across subjects
+2. For each selected word, generate ONE multiple-choice question (MCQ).
 
-Return as a simple JSON array of words: ["word1", "word2", "word3"]
-
-Only return the JSON array, nothing else.`
+Return ONLY a JSON array. No explanation, no markdown, no extra text. Format:
+[
+  {
+    "word": "subsequent",
+    "question": "What does 'subsequent' mean?",
+    "options": ["A) Coming after in time or order", "B) Happening at the same time", "C) Occurring before an event", "D) Unrelated to previous events"],
+    "correct": "A"
+  }
+]`
             }]
         });
-        
+
         const responseText = message.content[0].text;
-        console.log('Claude response:', responseText);
-        
+        console.log('Claude raw response (first 200 chars):', responseText.slice(0, 200));
+
+        // Strip markdown code fences if Claude wraps the JSON (it sometimes does)
         const cleaned = responseText.replace(/```json\n?|\n?```/g, '').trim();
-        const quizQuestions = JSON.parse(cleaned);
-        
-        res.json({ words: quizQuestions });
-        
+        const questions = JSON.parse(cleaned);
+
+        console.log(`Returning ${questions.length} questions`);
+        res.json({ questions });
+
     } catch (error) {
-        console.error('Error filtering words:', error);
-        res.status(500).json({ error: 'Failed to filter words' });
+        console.error('Error in /generate-quiz:', error);
+        res.status(500).json({ error: 'Failed to generate quiz. Please try again.' });
     }
 });
 
-// Export the Express app as a Firebase Function
+// ─── Export as Firebase Function ──────────────────────────────────────────────
 exports.api = functions.https.onRequest(
-    {
-        secrets: ['ANTHROPIC_API_KEY']
-    },
+    { secrets: ['ANTHROPIC_API_KEY'] },
     app
-); 
- 
+);
