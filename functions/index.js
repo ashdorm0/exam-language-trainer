@@ -1,74 +1,68 @@
-const functions = require('firebase-functions/v2');
-const express = require('express');
-const Anthropic = require('@anthropic-ai/sdk');
-const cors = require('cors');
+const functions = require('firebase-functions/v2')
+const express = require('express')
+const Anthropic = require('@anthropic-ai/sdk')
+const cors = require('cors')
 
-const app = express();
+const app = express()
 
 // ─── Rate Limiting ────────────────────────────────────────────────────────────
 // Simple in-memory store: tracks request timestamps per IP address.
 // Each IP gets a sliding 1-hour window. After 50 requests, further requests
 // are rejected with HTTP 429. This protects against runaway API costs.
-const requestCounts = new Map();
-const RATE_LIMIT = 50;
-const RATE_WINDOW = 60 * 60 * 1000; // 1 hour in ms
+const requestCounts = new Map()
+const RATE_LIMIT = 50
+const RATE_WINDOW = 60 * 60 * 1000 // 1 hour in ms
 
-app.use(cors());
-app.use(express.json());
+app.use(cors())
+app.use(express.json())
 
 app.use((req, res, next) => {
-    const ip = req.ip || req.connection.remoteAddress;
-    const now = Date.now();
+  const ip = req.ip || req.connection.remoteAddress
+  const now = Date.now()
 
-    if (!requestCounts.has(ip)) requestCounts.set(ip, []);
-    const recent = requestCounts.get(ip).filter(t => now - t < RATE_WINDOW);
+  if (!requestCounts.has(ip)) requestCounts.set(ip, [])
+  const recent = requestCounts.get(ip).filter(t => now - t < RATE_WINDOW)
 
-    if (recent.length >= RATE_LIMIT) {
-        return res.status(429).json({ error: 'Too many requests. Please try again later.' });
-    }
+  if (recent.length >= RATE_LIMIT) {
+    return res
+      .status(429)
+      .json({ error: 'Too many requests. Please try again later.' })
+  }
 
-    recent.push(now);
-    requestCounts.set(ip, recent);
-    next();
-});
+  recent.push(now)
+  requestCounts.set(ip, recent)
+  next()
+})
 
 // ─── Anthropic Client ─────────────────────────────────────────────────────────
 const anthropic = new Anthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY,
-});
+  apiKey: process.env.ANTHROPIC_API_KEY
+})
 
 // ─── Single Endpoint: /generate-quiz ─────────────────────────────────────────
 //
-// WHY ONE ENDPOINT?
-// The old design had two separate API calls: /filter-words then /generate-quiz.
-// This doubled latency and cost. Now Claude does both jobs in a single prompt:
-//   1. Select the 30 hardest *general academic* words (ignoring subject jargon)
-//   2. Generate one MCQ per selected word
-//
-// This is more efficient and easier to explain: one call, one response, one cost.
-//
-// INPUT:  { words: string[], subject: string }
-// OUTPUT: { questions: Question[] }  (array of up to 30 MCQ objects)
-//
 app.post('/generate-quiz', async (req, res) => {
-    try {
-        const { words, subject } = req.body;
+  try {
+    const { words, subject } = req.body
 
-        if (!words || words.length === 0) {
-            return res.status(400).json({ error: 'No words provided' });
-        }
-        if (!subject) {
-            return res.status(400).json({ error: 'No subject provided' });
-        }
+    if (!words || words.length === 0) {
+      return res.status(400).json({ error: 'No words provided' })
+    }
+    if (!subject) {
+      return res.status(400).json({ error: 'No subject provided' })
+    }
 
-        console.log(`Generating quiz: ${words.length} candidate words, subject: "${subject}"`);
+    console.log(
+      `Generating quiz: ${words.length} candidate words, subject: "${subject}"`
+    )
 
-        const message = await anthropic.messages.create({
-            model: 'claude-haiku-4-5-20251001',
-            max_tokens: 4096,
-            messages: [{
-                role: 'user',
-                content: `Here are words extracted from a ${subject} exam paper:
+    const message = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 4096,
+      messages: [
+        {
+          role: 'user',
+          content: `Here are words extracted from a ${subject} exam paper:
 ${words.join(', ')}
 
 Your task has two parts:
@@ -88,27 +82,29 @@ Return ONLY a JSON array. No explanation, no markdown, no extra text. Format:
     "correct": "A"
   }
 ]`
-            }]
-        });
+        }
+      ]
+    })
 
-        const responseText = message.content[0].text;
-        console.log('Claude raw response (first 200 chars):', responseText.slice(0, 200));
+    const responseText = message.content[0].text
+    console.log(
+      'Claude raw response (first 200 chars):',
+      responseText.slice(0, 200)
+    )
 
-        // Strip markdown code fences if Claude wraps the JSON (it sometimes does)
-        const cleaned = responseText.replace(/```json\n?|\n?```/g, '').trim();
-        const questions = JSON.parse(cleaned);
+    // Strip markdown code fences if Claude wraps the JSON (it sometimes does)
+    const cleaned = responseText.replace(/```json\n?|\n?```/g, '').trim()
+    const questions = JSON.parse(cleaned)
 
-        console.log(`Returning ${questions.length} questions`);
-        res.json({ questions });
-
-    } catch (error) {
-        console.error('Error in /generate-quiz:', error);
-        res.status(500).json({ error: 'Failed to generate quiz. Please try again.' });
-    }
-});
+    console.log(`Returning ${questions.length} questions`)
+    res.json({ questions })
+  } catch (error) {
+    console.error('Error in /generate-quiz:', error)
+    res
+      .status(500)
+      .json({ error: 'Failed to generate quiz. Please try again.' })
+  }
+})
 
 // ─── Export as Firebase Function ──────────────────────────────────────────────
-exports.api = functions.https.onRequest(
-    { secrets: ['ANTHROPIC_API_KEY'] },
-    app
-);
+exports.api = functions.https.onRequest({ secrets: ['ANTHROPIC_API_KEY'] }, app)

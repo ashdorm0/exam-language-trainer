@@ -134,3 +134,10 @@ Each library has different module formats. Check the dist/ folder and try differ
 - Build student quiz interface
 
 **Time spent today:** ~3 hours
+
+## Monday, March 9, 2026
+
+- Started Iteration 2. First priority was fixing the prompt() issue that caused a silent failure during the Iteration 1 demo (supervisor feedback: 7/10, demo not fluid enough).
+- Replaced browser prompt() with a Bootstrap modal for the quiz save flow. The key difference is that prompt() is browser-controlled and can be silently suppressed, while a Bootstrap modal is application-controlled HTML that behaves consistently everywhere.
+- The Save button is disabled until the lecturer types a title, which handles validation visually instead of silently aborting.
+- Tested end-to-end locally and deployed. Git commit pushed.
