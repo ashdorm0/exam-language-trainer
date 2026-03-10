@@ -141,3 +141,10 @@ Each library has different module formats. Check the dist/ folder and try differ
 - Replaced browser prompt() with a Bootstrap modal for the quiz save flow. The key difference is that prompt() is browser-controlled and can be silently suppressed, while a Bootstrap modal is application-controlled HTML that behaves consistently everywhere.
 - The Save button is disabled until the lecturer types a title, which handles validation visually instead of silently aborting.
 - Tested end-to-end locally and deployed. Git commit pushed.
+
+## Tuesday, March 10, 2026
+
+- Day 2 of Iteration 2. Added PDF support using PDF.js (v3.11.174) and DOCX support using Mammoth.js (v1.11.0), both loaded from CDN — consistent with how Bootstrap is already loaded, and the app requires internet anyway for Firebase/Claude API.
+- Both libraries extract text client-side, maintaining the security requirement. The key architectural point: all three extraction paths (txt, pdf, docx) produce a plain text string that feeds into the same unchanged NLP pipeline. Adding a new format just means adding a new extraction function.
+- PDF.js needs a worker file for background processing; Mammoth.js doesn't — extractRawText() was only 4 lines of code.
+- Tested with the Software Engineering exam paper in both formats. Committed and deployed.

@@ -141,9 +141,10 @@ function onFileSelected () {
 }
 
 function setFile (file) {
-  if (!file.name.endsWith('.txt')) {
+  const name = file.name.toLowerCase()
+  if (!name.endsWith('.txt') && !name.endsWith('.pdf') && !name.endsWith('.docx')) {
     alert(
-      'Please upload a plain text (.txt) file. PDF and DOCX support coming in Iteration 2.'
+      'Please upload a .txt, .pdf, or .docx file.'
     )
     return
   }
@@ -175,9 +176,20 @@ async function onExtract () {
   spinnerExtract.classList.remove('d-none')
   extractBtn.disabled = true
 
-  const reader = new FileReader()
-  reader.onload = e => {
-    const text = e.target.result
+  try {
+    let text
+
+    if (file.name.toLowerCase().endsWith('.pdf')) {
+      // PDF path — use PDF.js to extract text client-side
+      text = await extractTextFromPDF(file)
+    } else if (file.name.toLowerCase().endsWith('.docx')) {
+      // DOCX path — use Mammoth.js to extract text client-side
+      text = await extractTextFromDOCX(file)
+    } else {
+      // Plain text path — use FileReader as before
+      text = await readFileAsText(file)
+    }
+
     candidateWords = extractVocabulary(text)
     spinnerExtract.classList.add('d-none')
 
@@ -191,8 +203,65 @@ async function onExtract () {
 
     // Show confirmation modal (Phase 2)
     showConfirmationModal(candidateWords, subject)
+  } catch (error) {
+    console.error('Extraction error:', error)
+    spinnerExtract.classList.add('d-none')
+    alert('Failed to extract text from file. Please try another file.')
+    extractBtn.disabled = false
   }
-  reader.readAsText(file)
+}
+
+/**
+ * readFileAsText — wraps FileReader in a Promise so we can use async/await.
+ * Previously the FileReader callback was inline in onExtract; extracting it
+ * keeps the two paths (txt and pdf) parallel in structure.
+ */
+function readFileAsText (file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = e => resolve(e.target.result)
+    reader.onerror = () => reject(new Error('Failed to read text file'))
+    reader.readAsText(file)
+  })
+}
+
+/**
+ * extractTextFromPDF — reads a PDF file entirely client-side using PDF.js.
+ * The PDF never leaves the browser. Each page's text content is extracted
+ * and concatenated into a single string for the NLP pipeline.
+ */
+async function extractTextFromPDF (file) {
+  // Convert file to ArrayBuffer for PDF.js
+  const arrayBuffer = await file.arrayBuffer()
+
+  // Load the PDF document
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+  console.log(`PDF loaded: ${pdf.numPages} pages`)
+
+  let fullText = ''
+
+  // Extract text from each page
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i)
+    const content = await page.getTextContent()
+    const pageText = content.items.map(item => item.str).join(' ')
+    fullText += pageText + ' '
+  }
+
+  console.log(`PDF text extracted: ${fullText.length} characters`)
+  return fullText
+}
+
+/**
+ * extractTextFromDOCX — reads a Word .docx file entirely client-side using Mammoth.js.
+ * The document never leaves the browser. Mammoth extracts the raw text content,
+ * stripping all formatting, which is exactly what the NLP pipeline needs.
+ */
+async function extractTextFromDOCX (file) {
+  const arrayBuffer = await file.arrayBuffer()
+  const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer })
+  console.log(`DOCX text extracted: ${result.value.length} characters`)
+  return result.value
 }
 
 /**

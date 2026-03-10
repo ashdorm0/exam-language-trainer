@@ -12,6 +12,13 @@
 
     <!-- NLP libraries (loaded globally so main.js can use them) -->
     <script src="libs/compromise.js"></script>
+    <!-- PDF.js — client-side PDF text extraction (CDN, like Bootstrap) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    </script>
+    <!-- Mammoth.js — client-side DOCX text extraction -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.11.0/mammoth.browser.min.js"></script>
 
     <style>
         /* ── Design direction: clean institutional, trustworthy academic tool ── */
@@ -384,8 +391,8 @@
                     <div class="upload-zone mb-3" id="uploadZone">
                         <div class="icon"><i class="bi bi-file-earmark-text"></i></div>
                         <p><strong>Click to choose a file</strong> or drag and drop here</p>
-                        <p style="margin-top:0.25rem; font-size:0.78rem;">Plain text (.txt) files supported in Iteration 1</p>
-                        <input type="file" id="fileInput" accept=".txt">
+                        <p style="margin-top:0.25rem; font-size:0.78rem;">Supported formats: .txt, .pdf, .docx</p>
+                        <input type="file" id="fileInput" accept=".txt,.pdf,.docx">
                     </div>
                     <div class="file-selected" id="fileSelected">
                         <i class="bi bi-check-circle-fill"></i> <span id="fileName"></span>
