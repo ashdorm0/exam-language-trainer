@@ -505,6 +505,18 @@ async function onConfirmSave () {
     saveSection.classList.add('d-none')
     setStep(4)
 
+    // Generate QR code for the quiz URL
+    const qrContainer = document.getElementById('qrCode')
+    qrContainer.innerHTML = '' // Clear any previous QR code
+    new QRCode(qrContainer, {
+      text: quizUrl,
+      width: 160,
+      height: 160,
+      colorDark: '#1e293b',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
+    })
+
     sectionSaved.scrollIntoView({ behavior: 'smooth' })
   } catch (error) {
     console.error('Save error:', error)

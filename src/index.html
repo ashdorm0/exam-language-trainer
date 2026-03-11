@@ -19,6 +19,8 @@
     </script>
     <!-- Mammoth.js — client-side DOCX text extraction -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.11.0/mammoth.browser.min.js"></script>
+    <!-- QRCode.js — client-side QR code generation, no dependencies -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <style>
         /* ── Design direction: clean institutional, trustworthy academic tool ── */
@@ -476,6 +478,12 @@
                             style="font-family:Arial,sans-serif; background:#e2e8f0;">
                         <i class="bi bi-clipboard"></i> Copy link
                     </button>
+                    <div style="margin-top:1.25rem;">
+                        <p style="font-family:Arial,sans-serif; font-size:0.9rem; color:var(--muted); margin-bottom:0.5rem;">
+                            Or display this QR code for students to scan:
+                        </p>
+                        <div id="qrCode"></div>
+                    </div>
                 </div>
             </div>
         </div>
