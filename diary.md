@@ -148,3 +148,11 @@ Each library has different module formats. Check the dist/ folder and try differ
 - Both libraries extract text client-side, maintaining the security requirement. The key architectural point: all three extraction paths (txt, pdf, docx) produce a plain text string that feeds into the same unchanged NLP pipeline. Adding a new format just means adding a new extraction function.
 - PDF.js needs a worker file for background processing; Mammoth.js doesn't — extractRawText() was only 4 lines of code.
 - Tested with the Software Engineering exam paper in both formats. Committed and deployed.
+
+## Wednesday, March 11, 2026
+
+- Added QR code generation using QRCode.js — appears alongside the share link after saving a quiz. Tested by scanning with phone.
+- Implemented Firebase Authentication (email/password). The lecturer tool is now gated behind sign-in. Used onAuthStateChanged to handle auth state — this fires on login, logout, and page load, so the lecturer stays signed in on refresh.
+- Each saved quiz now stores a lecturerId (the Firebase Auth UID) so quizzes can be filtered per lecturer.
+- Built a new quiz management page (manage.html / manage.js). Queries Firestore with where('lecturerId', '==', currentUser.uid) to show only the logged-in lecturer's quizzes. Learned that Firestore requires a composite index when combining where and orderBy on different fields had to create one in the Firebase Console.
+- Delete uses a confirmation modal before removing from Firestore.
