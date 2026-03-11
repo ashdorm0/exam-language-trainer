@@ -4,6 +4,13 @@
 
 import { removeStopwords, eng } from '../libs/stopword.esm.mjs'
 import { saveQuiz } from './saveQuiz.js'
+import { auth } from './firebase.js'
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
+} from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js'
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -27,6 +34,7 @@ let COMMON_WORDS = new Set()
 let questionPool = []
 let displayedQuestions = []
 let nextPoolIndex = 0
+let currentUser = null // Firebase Auth user object
 
 // ── DOM references (populated after DOMContentLoaded) ─────────────────────────
 
@@ -122,10 +130,111 @@ document.addEventListener('DOMContentLoaded', async () => {
     copyBtn.innerHTML = '<i class="bi bi-check"></i> Copied!'
   })
 
+  // ── Auth events ──
+  document.getElementById('signInBtn').addEventListener('click', onSignIn)
+  document.getElementById('registerBtn').addEventListener('click', onRegister)
+  document.getElementById('signOutBtn').addEventListener('click', onSignOut)
+
+  // Listen for auth state changes — this fires on page load too
+  onAuthStateChanged(auth, (user) => {
+    currentUser = user
+    const authSection = document.getElementById('section-auth')
+    const toolSection = document.getElementById('section-lecturer-tool')
+    const userInfo = document.getElementById('userInfo')
+    const userEmail = document.getElementById('userEmail')
+
+    if (user) {
+      // Logged in — show lecturer tool, hide sign-in
+      authSection.classList.add('d-none')
+      toolSection.classList.remove('d-none')
+      userInfo.classList.remove('d-none')
+      userEmail.textContent = user.email
+    } else {
+      // Logged out — show sign-in, hide lecturer tool
+      authSection.classList.remove('d-none')
+      toolSection.classList.add('d-none')
+      userInfo.classList.add('d-none')
+    }
+  })
+
   console.log('Exam Language Trainer initialised')
   console.log('Compromise loaded:', typeof nlp !== 'undefined')
   console.log('removeStopwords loaded:', typeof removeStopwords !== 'undefined')
 })
+
+// ── Authentication ────────────────────────────────────────────────────────────
+
+function showAuthError (message) {
+  const errorEl = document.getElementById('authError')
+  errorEl.textContent = message
+  errorEl.classList.remove('d-none')
+}
+
+function clearAuthError () {
+  document.getElementById('authError').classList.add('d-none')
+}
+
+async function onSignIn () {
+  clearAuthError()
+  const email = document.getElementById('authEmail').value.trim()
+  const password = document.getElementById('authPassword').value
+
+  if (!email || !password) {
+    showAuthError('Please enter both email and password.')
+    return
+  }
+
+  try {
+    await signInWithEmailAndPassword(auth, email, password)
+    // onAuthStateChanged will handle the UI switch
+  } catch (error) {
+    console.error('Sign-in error:', error.code)
+    if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+      showAuthError('Incorrect email or password.')
+    } else {
+      showAuthError('Sign-in failed. Please try again.')
+    }
+  }
+}
+
+async function onRegister () {
+  clearAuthError()
+  const email = document.getElementById('authEmail').value.trim()
+  const password = document.getElementById('authPassword').value
+
+  if (!email || !password) {
+    showAuthError('Please enter both email and password.')
+    return
+  }
+
+  if (password.length < 6) {
+    showAuthError('Password must be at least 6 characters.')
+    return
+  }
+
+  try {
+    await createUserWithEmailAndPassword(auth, email, password)
+    // onAuthStateChanged will handle the UI switch
+  } catch (error) {
+    console.error('Register error:', error.code)
+    if (error.code === 'auth/email-already-in-use') {
+      showAuthError('An account with this email already exists. Try signing in.')
+    } else if (error.code === 'auth/invalid-email') {
+      showAuthError('Please enter a valid email address.')
+    } else {
+      showAuthError('Registration failed. Please try again.')
+    }
+  }
+}
+
+async function onSignOut () {
+  try {
+    await signOut(auth)
+    // onAuthStateChanged will handle the UI switch
+  } catch (error) {
+    console.error('Sign-out error:', error)
+  }
+}
 
 // ── File handling ─────────────────────────────────────────────────────────────
 
@@ -496,7 +605,7 @@ async function onConfirmSave () {
 
   try {
     // We save only the currently displayed questions (the approved ones)
-    const quizId = await saveQuiz(title, displayedQuestions)
+    const quizId = await saveQuiz(title, displayedQuestions, currentUser.uid)
     const quizUrl = `${window.location.origin}/quiz.html?id=${quizId}`
 
     // Show success

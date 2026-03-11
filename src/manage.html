@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Language Trainer — My Quizzes</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- QRCode.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <style>
+        /* ── Shared design tokens — must match index.html ── */
+        :root {
+            --primary: #1a56db;
+            --primary-dark: #1341b0;
+            --success: #0e9f6e;
+            --danger: #e02424;
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --border: #e2e8f0;
+            --text: #1e293b;
+            --muted: #64748b;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Georgia', 'Times New Roman', serif;
+            min-height: 100vh;
+        }
+
+        .app-header {
+            background: var(--primary);
+            color: white;
+            padding: 1.25rem 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .app-header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            margin: 0;
+            font-family: 'Georgia', serif;
+        }
+        .app-header .subtitle {
+            font-size: 0.85rem;
+            opacity: 0.8;
+            font-family: Arial, sans-serif;
+            margin: 0;
+        }
+
+        .quiz-item {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+            transition: box-shadow 0.2s;
+        }
+        .quiz-item:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+
+        .quiz-title {
+            font-family: Arial, sans-serif;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 0.25rem;
+        }
+        .quiz-meta {
+            font-family: Arial, sans-serif;
+            font-size: 0.8rem;
+            color: var(--muted);
+            margin-bottom: 0.75rem;
+        }
+        .quiz-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .btn-action {
+            font-family: Arial, sans-serif;
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 0.35rem 0.75rem;
+            border-radius: 5px;
+            border: 1px solid var(--border);
+            background: #f8fafc;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .btn-action:hover { background: #eff6ff; border-color: var(--primary); color: var(--primary); }
+        .btn-delete {
+            border-color: #fecaca;
+            color: var(--danger);
+        }
+        .btn-delete:hover { background: #fef2f2; border-color: var(--danger); }
+
+        .share-url {
+            font-family: 'Courier New', monospace;
+            font-size: 0.82rem;
+            word-break: break-all;
+            color: var(--primary);
+            background: #eff6ff;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            margin-top: 0.75rem;
+        }
+        .qr-container {
+            margin-top: 0.75rem;
+        }
+        .quiz-detail-panel {
+            display: none;
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--border);
+        }
+        .quiz-detail-panel.open { display: block; }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            font-family: Arial, sans-serif;
+            color: var(--muted);
+        }
+        .empty-state i { font-size: 2.5rem; display: block; margin-bottom: 0.75rem; }
+
+        .nav-link-back {
+            font-family: Arial, sans-serif;
+            font-size: 0.88rem;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .nav-link-back:hover { text-decoration: underline; }
+
+        .d-none { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <!-- ══ Header ══ -->
+    <header class="app-header">
+        <div class="container">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h1><span class="header-lock"></span>Exam Language Trainer</h1>
+                    <p class="subtitle">Quiz Management</p>
+                </div>
+                <div id="userInfo" class="d-none" style="font-family:Arial,sans-serif; font-size:0.78rem; color:rgba(255,255,255,0.85);">
+                    <span id="userEmail"></span>
+                    <button class="btn btn-sm btn-outline-light ms-2" id="signOutBtn" style="font-size:0.7rem; padding:2px 8px;">
+                        Sign Out
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ══ Main Content ══ -->
+    <div class="container py-4" style="max-width:760px;">
+
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <a href="index.html" class="nav-link-back">
+                <i class="bi bi-arrow-left"></i> Back to Quiz Creator
+            </a>
+            <h2 style="font-family:Arial,sans-serif; font-size:1.2rem; font-weight:700; margin:0;">
+                My Quizzes
+            </h2>
+        </div>
+
+        <!-- Loading spinner -->
+        <div class="d-flex align-items-center justify-content-center py-4" id="spinner-loading">
+            <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+            <span style="font-family:Arial,sans-serif; font-size:0.9rem; color:var(--muted); margin-left:0.5rem;">
+                Loading your quizzes…
+            </span>
+        </div>
+
+        <!-- Quiz list rendered here by manage.js -->
+        <div id="quizList"></div>
+    </div>
+
+    <!-- ══ Delete Confirmation Modal ══ -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" style="font-family:Arial,sans-serif; font-weight:700;">
+                        <i class="bi bi-exclamation-triangle text-danger"></i>
+                        Delete Quiz
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="font-family:Arial,sans-serif; font-size:0.9rem;">
+                    Are you sure you want to delete "<span id="deleteQuizTitle"></span>"?
+                    Students will no longer be able to access this quiz. This cannot be undone.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"
+                            style="font-family:Arial,sans-serif;">
+                        Cancel
+                    </button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn"
+                            style="font-family:Arial,sans-serif; font-weight:600;">
+                        <i class="bi bi-trash"></i> Delete Quiz
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="js/manage.js"></script>
+
+</body>
+</html>

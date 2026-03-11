@@ -340,13 +340,65 @@
                     <h1><span class="header-lock"></span>Exam Language Trainer</h1>
                     <p class="subtitle">Vocabulary Quiz Generator</p>
                 </div>
-                <div class="security-badge" style="font-size:0.75rem;">
-                    <i class="bi bi-shield-check"></i>
-                    Exam papers never leave your browser
+                <div class="d-flex align-items-center gap-3">
+                    <div class="security-badge" style="font-size:0.75rem;">
+                        <i class="bi bi-shield-check"></i>
+                        Exam papers never leave your browser
+                    </div>
+                    <div id="userInfo" class="d-none" style="font-family:Arial,sans-serif; font-size:0.78rem; color:rgba(255,255,255,0.85);">
+                        <a href="manage.html" style="color:white; text-decoration:none; font-weight:600; margin-right:0.75rem;">
+                            <i class="bi bi-journal-text"></i> My Quizzes
+                        </a>
+                        <span id="userEmail"></span>
+                        <button class="btn btn-sm btn-outline-light ms-2" id="signOutBtn" style="font-size:0.7rem; padding:2px 8px;">
+                            Sign Out
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     </header>
+
+    <!-- ══ Sign-In Section (shown when not authenticated) ══ -->
+    <div id="section-auth" class="container py-5" style="max-width:440px;">
+        <div class="card">
+            <div class="card-body p-4 text-center">
+                <i class="bi bi-person-lock" style="font-size:2.5rem; color:var(--primary);"></i>
+                <h2 style="font-family:Arial,sans-serif; font-size:1.3rem; font-weight:700; margin-top:0.75rem;">
+                    Lecturer Sign In
+                </h2>
+                <p style="font-family:Arial,sans-serif; font-size:0.85rem; color:var(--muted); margin-bottom:1.25rem;">
+                    Sign in to create and manage vocabulary quizzes.
+                </p>
+
+                <div class="text-start">
+                    <label for="authEmail" class="form-label fw-semibold" style="font-family:Arial,sans-serif; font-size:0.85rem;">
+                        Email
+                    </label>
+                    <input type="email" class="form-control mb-3" id="authEmail"
+                           placeholder="lecturer@setu.ie" style="font-family:Arial,sans-serif;">
+
+                    <label for="authPassword" class="form-label fw-semibold" style="font-family:Arial,sans-serif; font-size:0.85rem;">
+                        Password
+                    </label>
+                    <input type="password" class="form-control mb-3" id="authPassword"
+                           placeholder="Password" style="font-family:Arial,sans-serif;">
+                </div>
+
+                <div id="authError" class="d-none alert alert-danger" style="font-family:Arial,sans-serif; font-size:0.85rem;"></div>
+
+                <button class="btn btn-extract w-100 mb-2" id="signInBtn" style="font-family:Arial,sans-serif;">
+                    Sign In
+                </button>
+                <button class="btn btn-outline-secondary w-100" id="registerBtn" style="font-family:Arial,sans-serif;">
+                    Create Account
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ Lecturer Tool (hidden until authenticated) ══ -->
+    <div id="section-lecturer-tool" class="d-none">
 
     <!-- ══ Step Bar ══ -->
     <div class="step-bar">
@@ -489,6 +541,8 @@
         </div>
 
     </main>
+
+    </div><!-- end section-lecturer-tool -->
 
     <!-- ══ Confirmation Modal ══ -->
     <!--
