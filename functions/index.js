@@ -40,6 +40,9 @@ const anthropic = new Anthropic({
 })
 
 // ─── Single Endpoint: /generate-quiz ─────────────────────────────────────────
+// Streams Claude's response to the browser using Server-Sent Events (SSE).
+// The browser receives text chunks in real time and can parse complete
+// question objects as they arrive, rather than waiting for the full response.
 //
 app.post('/generate-quiz', async (req, res) => {
   try {
@@ -53,12 +56,18 @@ app.post('/generate-quiz', async (req, res) => {
     }
 
     console.log(
-      `Generating quiz: ${words.length} candidate words, subject: "${subject}"`
+      `Generating quiz (streaming): ${words.length} candidate words, subject: "${subject}"`
     )
 
-    const message = await anthropic.messages.create({
+    // Set headers for Server-Sent Events
+    res.setHeader('Content-Type', 'text/event-stream')
+    res.setHeader('Cache-Control', 'no-cache')
+    res.setHeader('Connection', 'keep-alive')
+
+    const stream = await anthropic.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 4096,
+      stream: true,
       messages: [
         {
           role: 'user',
@@ -86,23 +95,29 @@ Return ONLY a JSON array. No explanation, no markdown, no extra text. Format:
       ]
     })
 
-    const responseText = message.content[0].text
-    console.log(
-      'Claude raw response (first 200 chars):',
-      responseText.slice(0, 200)
-    )
+    // Forward each text chunk to the browser as an SSE event
+    for await (const chunk of stream) {
+      if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
+        // SSE format: "data: <text>\n\n"
+        res.write(`data: ${JSON.stringify({ text: chunk.delta.text })}\n\n`)
+      }
+    }
 
-    // Strip markdown code fences if Claude wraps the JSON (it sometimes does)
-    const cleaned = responseText.replace(/```json\n?|\n?```/g, '').trim()
-    const questions = JSON.parse(cleaned)
+    // Signal end of stream
+    res.write(`data: ${JSON.stringify({ done: true })}\n\n`)
+    res.end()
 
-    console.log(`Returning ${questions.length} questions`)
-    res.json({ questions })
+    console.log('Stream complete')
   } catch (error) {
     console.error('Error in /generate-quiz:', error)
-    res
-      .status(500)
-      .json({ error: 'Failed to generate quiz. Please try again.' })
+    // If headers haven't been sent yet, send JSON error
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Failed to generate quiz. Please try again.' })
+    } else {
+      // Headers already sent (mid-stream error) — send error as SSE
+      res.write(`data: ${JSON.stringify({ error: 'Stream interrupted. Please try again.' })}\n\n`)
+      res.end()
+    }
   }
 })
 

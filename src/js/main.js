@@ -438,6 +438,11 @@ function showConfirmationModal (words, subject) {
 
 /**
  * onConfirmAndGenerate — triggered when lecturer clicks "Send to Claude"
+ *
+ * STREAMING VERSION: Instead of waiting for the full API response,
+ * this reads Server-Sent Events from the backend and renders each
+ * question as soon as Claude finishes generating it. The lecturer
+ * sees questions appearing one by one instead of waiting 5-8 seconds.
  */
 async function onConfirmAndGenerate () {
   const subject = subjectInput.value.trim()
@@ -451,6 +456,12 @@ async function onConfirmAndGenerate () {
 
   // Scroll to quiz section
   sectionQuiz.scrollIntoView({ behavior: 'smooth' })
+
+  // Reset state
+  questionPool = []
+  displayedQuestions = []
+  nextPoolIndex = 0
+  questionsDisplay.innerHTML = ''
 
   try {
     const response = await fetch(`${API_BASE}/generate-quiz`, {
@@ -467,16 +478,60 @@ async function onConfirmAndGenerate () {
       throw new Error(`API error: ${err}`)
     }
 
-    const data = await response.json()
-    console.log(`Received ${data.questions.length} questions from Claude`)
+    // Read the SSE stream
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+    let rawText = '' // Accumulates the full Claude response
+    let sseBuffer = '' // Handles partial SSE lines
 
-    // Initialise pool
-    questionPool = data.questions
-    displayedQuestions = []
-    nextPoolIndex = 0
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
 
-    // Fill first display batch
-    fillDisplay()
+      // Decode the chunk and add to SSE buffer
+      sseBuffer += decoder.decode(value, { stream: true })
+
+      // Process complete SSE lines
+      const lines = sseBuffer.split('\n')
+      // Keep the last (potentially incomplete) line in the buffer
+      sseBuffer = lines.pop()
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue
+        const jsonStr = line.slice(6) // Remove "data: " prefix
+
+        try {
+          const event = JSON.parse(jsonStr)
+
+          if (event.error) {
+            throw new Error(event.error)
+          }
+
+          if (event.done) {
+            console.log('Stream complete')
+            break
+          }
+
+          if (event.text) {
+            rawText += event.text
+
+            // Try to extract complete question objects from what we have so far
+            tryParseQuestions(rawText)
+          }
+        } catch (parseErr) {
+          // Ignore parse errors on incomplete chunks
+          if (parseErr.message !== 'Stream interrupted. Please try again.') {
+            continue
+          }
+          throw parseErr
+        }
+      }
+    }
+
+    // Final parse attempt on complete response
+    tryParseQuestions(rawText)
+    console.log(`Stream finished. Total questions: ${questionPool.length}`)
+
   } catch (error) {
     console.error('Generation error:', error)
     questionsDisplay.innerHTML = `
@@ -487,6 +542,78 @@ async function onConfirmAndGenerate () {
   } finally {
     spinnerApi.classList.add('d-none')
     saveSection.classList.remove('d-none')
+  }
+}
+
+/**
+ * tryParseQuestions — attempts to extract complete question objects from
+ * the raw streamed text. Called repeatedly as new text arrives.
+ *
+ * Strategy: Claude returns a JSON array like [{...}, {...}, ...].
+ * We look for complete objects by finding matched { } pairs.
+ * Each time we find a new complete object, we add it to the pool
+ * and update the display.
+ */
+function tryParseQuestions (rawText) {
+  // Strip markdown code fences if present
+  const cleaned = rawText.replace(/```json\n?|\n?```/g, '').trim()
+
+  // Find the opening bracket
+  const startIdx = cleaned.indexOf('[')
+  if (startIdx === -1) return
+
+  const content = cleaned.slice(startIdx)
+
+  // Count complete question objects by tracking brace depth
+  let depth = 0
+  let inString = false
+  let escape = false
+  let objectStart = -1
+  const objects = []
+
+  for (let i = 0; i < content.length; i++) {
+    const ch = content[i]
+
+    if (escape) {
+      escape = false
+      continue
+    }
+    if (ch === '\\' && inString) {
+      escape = true
+      continue
+    }
+    if (ch === '"') {
+      inString = !inString
+      continue
+    }
+    if (inString) continue
+
+    if (ch === '{') {
+      if (depth === 0) objectStart = i
+      depth++
+    } else if (ch === '}') {
+      depth--
+      if (depth === 0 && objectStart !== -1) {
+        const objStr = content.slice(objectStart, i + 1)
+        try {
+          const obj = JSON.parse(objStr)
+          objects.push(obj)
+        } catch (e) {
+          // Incomplete or malformed — skip
+        }
+        objectStart = -1
+      }
+    }
+  }
+
+  // If we found new questions, add them to the pool and update display
+  if (objects.length > questionPool.length) {
+    const newQuestions = objects.slice(questionPool.length)
+    questionPool = objects
+    console.log(`Parsed ${newQuestions.length} new question(s), total: ${questionPool.length}`)
+
+    // Update display
+    fillDisplay()
   }
 }
 
