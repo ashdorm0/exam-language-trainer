@@ -5,59 +5,68 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Exam Language Trainer — Vocabulary Quiz</title>
 
+    <!-- Google Font — DM Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 
     <style>
-        /* ── Shared design tokens — must match index.html ── */
         :root {
-            --primary: #1a56db;
-            --primary-dark: #1341b0;
-            --success: #0e9f6e;
-            --danger: #e02424;
-            --bg: #f8fafc;
+            --primary: #46ACC2;
+            --primary-dark: #3d97ab;
+            --primary-light: #42F2F7;
+            --accent: #498C8A;
+            --success: #2a9d6e;
+            --danger: #d94444;
+            --bg: #f5f8f8;
             --surface: #ffffff;
-            --border: #e2e8f0;
-            --text: #1e293b;
-            --muted: #64748b;
+            --border: #d8e3e3;
+            --text: #4B6858;
+            --text-dark: #2d3d33;
+            --muted: #6b8076;
         }
+
+        * { box-sizing: border-box; }
 
         body {
             background: var(--bg);
             color: var(--text);
-            font-family: 'Georgia', 'Times New Roman', serif;
+            font-family: 'DM Sans', sans-serif;
             min-height: 100vh;
+            line-height: 1.6;
         }
 
-        /* ── Header — identical to lecturer tool ── */
+        /* ── Header ── */
         .app-header {
-            background: var(--primary);
+            background: linear-gradient(135deg, #498C8A 0%, #3d7a78 100%);
             color: white;
-            padding: 1.25rem 0;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            padding: 1.1rem 0;
+            border-bottom: 3px solid var(--primary-light);
         }
         .app-header h1 {
-            font-size: 1.5rem;
+            font-size: 1.35rem;
             font-weight: 700;
-            letter-spacing: -0.01em;
+            letter-spacing: -0.02em;
             margin: 0;
-            font-family: 'Georgia', serif;
         }
         .app-header .subtitle {
-            font-size: 0.85rem;
-            opacity: 0.8;
-            font-family: Arial, sans-serif;
+            font-size: 0.82rem;
+            opacity: 0.75;
             margin: 0;
+            font-weight: 400;
         }
 
         /* ── Main container ── */
         .quiz-card {
             background: var(--surface);
             border: 1px solid var(--border);
-            border-radius: 10px;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+            border-radius: 14px;
+            box-shadow: 0 2px 8px rgba(75, 104, 88, 0.06);
             padding: 2rem;
             margin-top: 2rem;
         }
@@ -69,31 +78,32 @@
             margin-bottom: 1rem;
         }
         .landing h2 {
-            font-size: 1.6rem;
+            font-size: 1.5rem;
             font-weight: 700;
             margin-bottom: 0.5rem;
+            color: var(--text-dark);
         }
         .landing p {
             color: var(--muted);
-            font-family: Arial, sans-serif;
             font-size: 0.95rem;
             margin-bottom: 1.5rem;
         }
 
         /* ── Progress bar ── */
         .progress-label {
-            font-family: Arial, sans-serif;
             font-size: 0.8rem;
             color: var(--muted);
             margin-bottom: 0.4rem;
+            font-weight: 500;
         }
         .progress {
             height: 6px;
             border-radius: 10px;
             margin-bottom: 1.5rem;
+            background: var(--border);
         }
         .progress-bar {
-            background: var(--primary);
+            background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%);
             border-radius: 10px;
             transition: width 0.3s ease;
         }
@@ -101,23 +111,22 @@
         /* ── Question ── */
         .word-tag {
             display: inline-block;
-            background: #eff6ff;
-            color: var(--primary);
-            font-family: Arial, sans-serif;
-            font-size: 0.75rem;
+            background: rgba(66, 242, 247, 0.12);
+            color: var(--accent);
+            font-size: 0.72rem;
             font-weight: 700;
-            padding: 2px 8px;
-            border-radius: 4px;
+            padding: 3px 10px;
+            border-radius: 5px;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.06em;
             margin-bottom: 0.75rem;
         }
         .question-text {
-            font-size: 1.15rem;
+            font-size: 1.1rem;
             font-weight: 600;
-            font-family: Arial, sans-serif;
             margin-bottom: 1.25rem;
             line-height: 1.5;
+            color: var(--text-dark);
         }
 
         /* ── Answer options ── */
@@ -126,28 +135,29 @@
             width: 100%;
             text-align: left;
             padding: 0.85rem 1.1rem;
-            margin-bottom: 0.6rem;
-            background: #f8fafc;
+            margin-bottom: 0.55rem;
+            background: #fafcfc;
             border: 2px solid var(--border);
-            border-radius: 8px;
-            font-family: Arial, sans-serif;
+            border-radius: 10px;
             font-size: 0.92rem;
             color: var(--text);
             cursor: pointer;
-            transition: all 0.15s;
+            transition: all 0.15s ease;
+            font-weight: 400;
         }
         .option:hover {
             border-color: var(--primary);
-            background: #eff6ff;
+            background: rgba(66, 242, 247, 0.06);
         }
         .option.selected {
             border-color: var(--primary);
-            background: #dbeafe;
+            background: rgba(70, 172, 194, 0.1);
             font-weight: 600;
+            color: var(--text-dark);
         }
         .option.correct {
             border-color: var(--success);
-            background: #f0fdf4;
+            background: rgba(42, 157, 110, 0.08);
             color: #166534;
             font-weight: 600;
         }
@@ -162,29 +172,37 @@
             background: var(--primary);
             color: white;
             border: none;
-            font-family: Arial, sans-serif;
             font-weight: 600;
             font-size: 0.95rem;
             padding: 0.7rem 1.75rem;
-            border-radius: 6px;
+            border-radius: 8px;
             margin-top: 1rem;
-            transition: background 0.15s;
+            transition: all 0.2s ease;
         }
-        .btn-next:hover:not(:disabled) { background: var(--primary-dark); color: white; }
+        .btn-next:hover:not(:disabled) {
+            background: var(--primary-dark);
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(70, 172, 194, 0.3);
+        }
         .btn-next:disabled { opacity: 0.4; cursor: not-allowed; }
 
         .btn-start {
             background: var(--primary);
             color: white;
             border: none;
-            font-family: Arial, sans-serif;
             font-weight: 600;
             font-size: 1rem;
             padding: 0.8rem 2.5rem;
-            border-radius: 6px;
-            transition: background 0.15s;
+            border-radius: 8px;
+            transition: all 0.2s ease;
         }
-        .btn-start:hover { background: var(--primary-dark); color: white; }
+        .btn-start:hover {
+            background: var(--primary-dark);
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(70, 172, 194, 0.3);
+        }
 
         /* ── Results screen ── */
         .score-circle {
@@ -197,35 +215,33 @@
             align-items: center;
             justify-content: center;
             margin: 0 auto 1.5rem;
-            background: #eff6ff;
+            background: rgba(70, 172, 194, 0.06);
         }
         .score-number {
             font-size: 2rem;
             font-weight: 700;
-            color: var(--primary);
+            color: var(--primary-dark);
             line-height: 1;
-            font-family: Arial, sans-serif;
         }
         .score-label {
             font-size: 0.7rem;
             color: var(--muted);
-            font-family: Arial, sans-serif;
             text-transform: uppercase;
             letter-spacing: 0.05em;
+            font-weight: 500;
         }
         .review-card {
-            background: #fff7ed;
-            border: 1px solid #fed7aa;
-            border-radius: 8px;
+            background: rgba(77, 71, 48, 0.04);
+            border: 1px solid rgba(77, 71, 48, 0.12);
+            border-radius: 10px;
             padding: 1rem 1.25rem;
-            margin-bottom: 0.75rem;
-            font-family: Arial, sans-serif;
+            margin-bottom: 0.65rem;
         }
         .review-card .word {
             font-weight: 700;
             font-size: 0.95rem;
-            color: var(--text);
-            margin-bottom: 0.25rem;
+            color: var(--text-dark);
+            margin-bottom: 0.2rem;
         }
         .review-card .correct-answer {
             color: var(--success);
@@ -241,24 +257,23 @@
         .btn-retake {
             background: none;
             border: 2px solid var(--primary);
-            color: var(--primary);
-            font-family: Arial, sans-serif;
+            color: var(--primary-dark);
             font-weight: 600;
             padding: 0.6rem 1.5rem;
-            border-radius: 6px;
+            border-radius: 8px;
             margin-top: 1rem;
-            transition: all 0.15s;
+            transition: all 0.2s ease;
         }
         .btn-retake:hover {
             background: var(--primary);
             color: white;
+            transform: translateY(-1px);
         }
 
         /* ── Error / loading states ── */
         .state-message {
             text-align: center;
             padding: 3rem 1rem;
-            font-family: Arial, sans-serif;
             color: var(--muted);
         }
         .state-message i {
@@ -292,8 +307,8 @@
                 <h2>Vocabulary Quiz</h2>
                 <p>Test your knowledge of key academic vocabulary<br>before your exam.</p>
                 <div class="d-flex align-items-center justify-content-center gap-2 mb-3">
-                    <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
-                    <span style="font-family:Arial,sans-serif; font-size:0.88rem; color:var(--muted);">
+                    <div class="spinner-border spinner-border-sm" role="status" style="color:var(--primary);"></div>
+                    <span style="font-size:0.88rem; color:var(--muted);">
                         Loading quiz…
                     </span>
                 </div>
