@@ -790,6 +790,7 @@ async function onConfirmSave () {
     // Show success
     sectionSaved.classList.remove('d-none')
     shareUrlEl.textContent = quizUrl
+    document.getElementById('viewQuizBtn').href = quizUrl
     saveSection.classList.add('d-none')
     setStep(4)
 
@@ -803,6 +804,16 @@ async function onConfirmSave () {
       colorDark: '#1e293b',
       colorLight: '#ffffff',
       correctLevel: QRCode.CorrectLevel.H
+    })
+
+    // Wire up QR download button
+    document.getElementById('downloadQrBtn').addEventListener('click', () => {
+      const canvas = qrContainer.querySelector('canvas')
+      if (!canvas) return
+      const link = document.createElement('a')
+      link.download = 'quiz-qr-code.png'
+      link.href = canvas.toDataURL('image/png')
+      link.click()
     })
 
     sectionSaved.scrollIntoView({ behavior: 'smooth' })

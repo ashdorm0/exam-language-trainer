@@ -11,6 +11,7 @@ import {
 // ── State ──────────────────────────────────────────────────────────────────────
 
 let questions = []
+let quizTitle = ''
 let score = 0
 let wrongAnswers = []
 let selectedAnswer = null
@@ -40,6 +41,7 @@ async function loadQuiz () {
 
     const quiz = docSnap.data()
     questions = quiz.questions
+    quizTitle = quiz.title
 
     console.log(`Quiz loaded: "${quiz.title}", ${questions.length} questions`)
 
@@ -84,6 +86,9 @@ function showQuestion (index) {
   const progress = Math.round((index / questions.length) * 100)
 
   card.innerHTML = `
+        <div style="font-family:Arial,sans-serif; font-size:0.85rem; font-weight:600; color:var(--muted); margin-bottom:0.75rem;">
+            ${quizTitle}
+        </div>
         <div class="progress-label">Question ${index + 1} of ${
     questions.length
   }</div>
@@ -151,6 +156,9 @@ function showResults () {
   const percent = Math.round((score / questions.length) * 100)
 
   card.innerHTML = `
+        <div style="font-family:Arial,sans-serif; font-size:0.85rem; font-weight:600; color:var(--muted); margin-bottom:0.5rem; text-align:center;">
+            ${quizTitle}
+        </div>
         <div class="text-center mb-4">
             <div class="score-circle">
                 <span class="score-number">${score}/${questions.length}</span>
