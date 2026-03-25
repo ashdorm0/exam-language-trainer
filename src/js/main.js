@@ -657,39 +657,50 @@ function renderQuestions () {
     return
   }
 
+  // Count how many cards are already rendered on screen
+  const existingCards = questionsDisplay.querySelectorAll('.question-card').length
+
+  // Only append NEW cards — don't touch existing ones (prevents flash during streaming)
+  for (let i = existingCards; i < displayedQuestions.length; i++) {
+    const cardHTML = buildQuestionCard(displayedQuestions[i], i)
+
+    // Create a temporary container to build the DOM element
+    const temp = document.createElement('div')
+    temp.innerHTML = cardHTML
+    const cardEl = temp.firstElementChild
+
+    // Wire up the remove button on this card only
+    const btn = cardEl.querySelector('.btn-remove')
+    btn.addEventListener('click', () => {
+      removeQuestion(parseInt(btn.dataset.index))
+    })
+
+    questionsDisplay.appendChild(cardEl)
+  }
+}
+
+/**
+ * fullRenderQuestions — rebuilds the entire display from scratch.
+ * Used after a removal (where indices change), NOT during streaming.
+ */
+function fullRenderQuestions () {
+  questionsDisplay.innerHTML = ''
+
+  if (displayedQuestions.length === 0) {
+    questionsDisplay.innerHTML = `
+            <p style="font-family:Arial,sans-serif; color:var(--muted); text-align:center; padding:2rem;">
+                All questions removed. <a href="/" style="color:var(--primary);">Start over</a> to generate new ones.
+            </p>`
+    saveSection.classList.add('d-none')
+    return
+  }
+
   questionsDisplay.innerHTML = displayedQuestions
-    .map(
-      (q, i) => `
-        <div class="question-card" data-index="${i}">
-            <button class="btn-remove" data-index="${i}">
-                <i class="bi bi-x"></i> Remove
-            </button>
-            <div class="word-tag">${q.word}</div>
-            <div class="question-num">Question ${i + 1}</div>
-            <div class="question-text">${q.question}</div>
-            <ul class="option-list">
-                ${q.options
-                  .map(
-                    opt => `
-                    <li class="${opt.startsWith(q.correct) ? 'correct' : ''}">
-                        ${opt}
-                        ${
-                          opt.startsWith(q.correct)
-                            ? '<i class="bi bi-check-circle-fill" style="margin-left:4px;"></i>'
-                            : ''
-                        }
-                    </li>
-                `
-                  )
-                  .join('')}
-            </ul>
-        </div>
-    `
-    )
+    .map((q, i) => buildQuestionCard(q, i))
     .join('')
 
   // Wire up remove buttons
-  document.querySelectorAll('.btn-remove').forEach(btn => {
+  questionsDisplay.querySelectorAll('.btn-remove').forEach(btn => {
     btn.addEventListener('click', () => {
       const idx = parseInt(btn.dataset.index)
       removeQuestion(idx)
@@ -698,12 +709,53 @@ function renderQuestions () {
 }
 
 /**
+ * buildQuestionCard — returns the HTML string for a single question card.
+ * Extracted so both renderQuestions (append) and fullRenderQuestions (rebuild)
+ * can use the same template.
+ */
+function buildQuestionCard (q, i) {
+  return `
+    <div class="question-card" data-index="${i}">
+        <button class="btn-remove" data-index="${i}">
+            <i class="bi bi-x"></i> Remove
+        </button>
+        <div class="word-tag">${q.word}</div>
+        <div class="question-num">Question ${i + 1}</div>
+        <div class="question-text">${q.question}</div>
+        <ul class="option-list">
+            ${q.options
+              .map(
+                opt => `
+                <li class="${opt.startsWith(q.correct) ? 'correct' : ''}">
+                    ${opt}
+                    ${
+                      opt.startsWith(q.correct)
+                        ? '<i class="bi bi-check-circle-fill" style="margin-left:4px;"></i>'
+                        : ''
+                    }
+                </li>
+            `
+              )
+              .join('')}
+        </ul>
+    </div>
+  `
+}
+
+/**
  * removeQuestion — removes a question from the display and pulls a
  * replacement from the pool.
  */
 function removeQuestion (displayIndex) {
   displayedQuestions.splice(displayIndex, 1)
-  fillDisplay() // Will top up from pool if possible
+  // After removal, indices change so we need a full rebuild
+  // Pull replacement from pool first
+  if (nextPoolIndex < questionPool.length) {
+    displayedQuestions.push(questionPool[nextPoolIndex])
+    nextPoolIndex++
+  }
+  fullRenderQuestions()
+  updatePoolInfo()
 }
 
 // ── Phase 5: Save ─────────────────────────────────────────────────────────────
