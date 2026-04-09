@@ -58,7 +58,7 @@ async function loadCommonWords () {
    * the COMMON_WORDS Set.
    */
   try {
-    const response = await fetch('../libs/common_words_1200.txt')
+    const response = await fetch('../libs/common_words_ngsl.txt')
     const text = await response.text()
     COMMON_WORDS = new Set(
       text
@@ -136,7 +136,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('signOutBtn').addEventListener('click', onSignOut)
 
   // Listen for auth state changes — this fires on page load too
-  onAuthStateChanged(auth, (user) => {
+  onAuthStateChanged(auth, user => {
     currentUser = user
     const authSection = document.getElementById('section-auth')
     const toolSection = document.getElementById('section-lecturer-tool')
@@ -189,7 +189,11 @@ async function onSignIn () {
     // onAuthStateChanged will handle the UI switch
   } catch (error) {
     console.error('Sign-in error:', error.code)
-    if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+    if (
+      error.code === 'auth/invalid-credential' ||
+      error.code === 'auth/user-not-found' ||
+      error.code === 'auth/wrong-password'
+    ) {
       showAuthError('Incorrect email or password.')
     } else {
       showAuthError('Sign-in failed. Please try again.')
@@ -218,7 +222,9 @@ async function onRegister () {
   } catch (error) {
     console.error('Register error:', error.code)
     if (error.code === 'auth/email-already-in-use') {
-      showAuthError('An account with this email already exists. Try signing in.')
+      showAuthError(
+        'An account with this email already exists. Try signing in.'
+      )
     } else if (error.code === 'auth/invalid-email') {
       showAuthError('Please enter a valid email address.')
     } else {
@@ -252,10 +258,12 @@ function onFileSelected () {
 
 function setFile (file) {
   const name = file.name.toLowerCase()
-  if (!name.endsWith('.txt') && !name.endsWith('.pdf') && !name.endsWith('.docx')) {
-    alert(
-      'Please upload a .txt, .pdf, or .docx file.'
-    )
+  if (
+    !name.endsWith('.txt') &&
+    !name.endsWith('.pdf') &&
+    !name.endsWith('.docx')
+  ) {
+    alert('Please upload a .txt, .pdf, or .docx file.')
     return
   }
   // Show file name
@@ -378,24 +386,16 @@ async function extractTextFromDOCX (file) {
  * extractVocabulary — the NLP pipeline
  */
 function extractVocabulary (text) {
-  // Step 1: Compromise.js normalisation
   const doc = nlp(text)
-  const allTerms = doc.terms().out('array')
+  const allTerms = doc.not('#ProperNoun').terms().out('array')
 
-  // Step 2: Clean tokens
   const cleaned = allTerms
-    .map(word =>
-      word
-        .toLowerCase()
-        .replace(/[^a-z]/g, '')
-        .trim()
-    )
-    .filter(word => word.length >= 4 && /^[a-z]+$/.test(word))
+    .map(word => word.toLowerCase().trim())
+    .filter(word => /^[a-z]+$/.test(word) && word.length >= 4)
 
-  // Step 3: Stopword removal
   const withoutStopwords = removeStopwords(cleaned, eng)
+ 
 
-  // Step 4: Remove common words
   const filtered = withoutStopwords.filter(word => !COMMON_WORDS.has(word))
 
   // Step 5: Count frequency
@@ -532,7 +532,6 @@ async function onConfirmAndGenerate () {
     // Final parse attempt on complete response
     tryParseQuestions(rawText)
     console.log(`Stream finished. Total questions: ${questionPool.length}`)
-
   } catch (error) {
     console.error('Generation error:', error)
     questionsDisplay.innerHTML = `
@@ -611,7 +610,9 @@ function tryParseQuestions (rawText) {
   if (objects.length > questionPool.length) {
     const newQuestions = objects.slice(questionPool.length)
     questionPool = objects
-    console.log(`Parsed ${newQuestions.length} new question(s), total: ${questionPool.length}`)
+    console.log(
+      `Parsed ${newQuestions.length} new question(s), total: ${questionPool.length}`
+    )
 
     // Update display
     fillDisplay()
@@ -659,7 +660,8 @@ function renderQuestions () {
   }
 
   // Count how many cards are already rendered on screen
-  const existingCards = questionsDisplay.querySelectorAll('.question-card').length
+  const existingCards =
+    questionsDisplay.querySelectorAll('.question-card').length
 
   // Only append NEW cards — don't touch existing ones (prevents flash during streaming)
   for (let i = existingCards; i < displayedQuestions.length; i++) {
