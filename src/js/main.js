@@ -369,6 +369,19 @@ async function extractTextFromPDF (file) {
   return fullText
 }
 
+function updateSelectionUI () {
+  const selectedCount = selectedWords.size
+  const totalCount = candidateWords.length
+
+  if (selectedCount < 10) {
+    wordCountNote.textContent = `Keep at least 10 words selected to generate a quiz.`
+    confirmSendBtn.disabled = true
+  } else {
+    wordCountNote.textContent = `${selectedCount} of ${totalCount} words selected. Click a word to exclude it. Only selected words will be sent to Claude.`
+    confirmSendBtn.disabled = false
+  }
+}
+
 /**
  * extractTextFromDOCX — reads a Word .docx file entirely client-side using Mammoth.js.
  * The document never leaves the browser. Mammoth extracts the raw text content,
@@ -437,6 +450,7 @@ function showConfirmationModal (words, subject) {
         selectedWords.add(word)
         chip.classList.remove('deselected')
       }
+      updateSelectionUI()
       console.log(`Selected: ${selectedWords.size} / ${words.length}`)
     })
   })
@@ -447,6 +461,7 @@ function showConfirmationModal (words, subject) {
 
   setStep(2)
   confirmModal.show()
+  updateSelectionUI()
 }
 
 // ── Phase 3: API call ─────────────────────────────────────────────────────────
