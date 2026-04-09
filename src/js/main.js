@@ -47,9 +47,8 @@ let shareUrlEl, copyBtn
 let wordChipsEl, wordCountNote, confirmSendBtn
 let confirmModal
 let saveModal, quizTitleInput, confirmSaveBtn
-
 let candidateWords = [] // Words ready to show in confirmation modal
-
+let selectedWords = new Set() // Words currently selected for sending to Claude
 // ── Initialisation ────────────────────────────────────────────────────────────
 
 async function loadCommonWords () {
@@ -394,7 +393,6 @@ function extractVocabulary (text) {
     .filter(word => /^[a-z]+$/.test(word) && word.length >= 4)
 
   const withoutStopwords = removeStopwords(cleaned, eng)
- 
 
   const filtered = withoutStopwords.filter(word => !COMMON_WORDS.has(word))
 
@@ -420,18 +418,34 @@ function extractVocabulary (text) {
 // ── Phase 2: Confirmation modal ───────────────────────────────────────────────
 
 function showConfirmationModal (words, subject) {
-  // Render word chips
+  // Reset state: every word starts selected
+  selectedWords = new Set(words)
+
+  // Render chips — each has data-word attribute so click handler knows which word it represents
   wordChipsEl.innerHTML = words
-    .map(w => `<span class="word-chip">${w}</span>`)
+    .map(w => `<span class="word-chip" data-word="${w}">${w}</span>`)
     .join('')
+
+  // Wire up click handlers on every chip
+  wordChipsEl.querySelectorAll('.word-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const word = chip.dataset.word
+      if (selectedWords.has(word)) {
+        selectedWords.delete(word)
+        chip.classList.add('deselected')
+      } else {
+        selectedWords.add(word)
+        chip.classList.remove('deselected')
+      }
+      console.log(`Selected: ${selectedWords.size} / ${words.length}`)
+    })
+  })
 
   wordCountNote.textContent =
     `${words.length} words extracted locally. Claude will select the 15 hardest ` +
     `general academic words and ignore ${subject}-specific terminology.`
 
-  // Update step indicators
   setStep(2)
-
   confirmModal.show()
 }
 
