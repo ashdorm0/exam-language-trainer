@@ -498,7 +498,7 @@ async function onConfirmAndGenerate () {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        words: candidateWords,
+        words: [...selectedWords],
         subject: subject
       })
     })
