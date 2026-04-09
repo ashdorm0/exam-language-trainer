@@ -230,7 +230,8 @@ async function onRegister () {
 async function onSignOut () {
   try {
     await signOut(auth)
-    // onAuthStateChanged will handle the UI switch
+    // Reload the page to reset all state cleanly
+    window.location.reload()
   } catch (error) {
     console.error('Sign-out error:', error)
   }

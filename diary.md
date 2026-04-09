@@ -156,3 +156,8 @@ Each library has different module formats. Check the dist/ folder and try differ
 - Each saved quiz now stores a lecturerId (the Firebase Auth UID) so quizzes can be filtered per lecturer.
 - Built a new quiz management page (manage.html / manage.js). Queries Firestore with where('lecturerId', '==', currentUser.uid) to show only the logged-in lecturer's quizzes. Learned that Firestore requires a composite index when combining where and orderBy on different fields had to create one in the Firebase Console.
 - Delete uses a confirmation modal before removing from Firestore.
+
+## Thursday, April 9, 2026
+
+- Iteration 3 is about giving lecturers transparency and control over which words are sent to Claude, replacing the opaque subject-field filter with visible, editable word selection and automatic proper-noun removal.
+- 
