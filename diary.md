@@ -160,4 +160,7 @@ Each library has different module formats. Check the dist/ folder and try differ
 ## Thursday, April 9, 2026
 
 - Iteration 3 is about giving lecturers transparency and control over which words are sent to Claude, replacing the opaque subject-field filter with visible, editable word selection and automatic proper-noun removal.
-- 
+- Completed Iteration 3 Task 3 (NGSL word list upgrade). Tested on same PDF as before: NGSL removed ~12 easy words (exam, core, target, platform, clearly, specify, etc.) that the 1,200-word list had missed. Remaining candidates are mostly plausible academic vocabulary (inadvertently, stakeholder, validated, deliberate, revealing). A few easy words still slip through (helping, sees, gave, four) — this is expected and is addressed by the upcoming lecturer-control feature (Task 4).
+- Process reflection: I bundled three logical NLP changes (proper noun filter, frankenword regex fix, word list swap) into a single commit instead of committing after each one. Lesson: commit after each logical change, not at the end of a work session. This would have given me cleaner history and easier rollback if any single change turned out to be buggy. Will apply this discipline for the remaining Iteration 3 tasks.
+- Also noticed: editor auto-formatter (Prettier) is reformatting unrelated parts of main.js on save, polluting diffs. Will investigate after Iteration 3.
+- Realised mid-design: student feedback about "more questions per quiz" is probably addressable by changing the "15 hardest" number in the Claude prompt to something higher. Trivial change, not in Iteration 3 scope, but worth investigating after Task 5. Captured here so I don't forget.

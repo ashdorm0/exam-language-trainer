@@ -39,7 +39,7 @@ let currentUser = null // Firebase Auth user object
 // ── DOM references (populated after DOMContentLoaded) ─────────────────────────
 
 let fileInput, uploadZone, fileSelected, fileNameSpan
-let subjectInput, extractBtn
+let extractBtn
 let spinnerExtract, spinnerApi
 let sectionUpload, sectionQuiz, sectionSaved
 let poolInfo, questionsDisplay, saveSection, saveBtn
@@ -84,7 +84,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   uploadZone = document.getElementById('uploadZone')
   fileSelected = document.getElementById('fileSelected')
   fileNameSpan = document.getElementById('fileName')
-  subjectInput = document.getElementById('subjectInput')
   extractBtn = document.getElementById('extractBtn')
   spinnerExtract = document.getElementById('spinner-extract')
   spinnerApi = document.getElementById('spinner-api')
@@ -116,7 +115,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     uploadZone.classList.remove('dragover')
   )
   uploadZone.addEventListener('drop', onFileDrop)
-  subjectInput.addEventListener('input', checkExtractReady)
   extractBtn.addEventListener('click', onExtract)
   confirmSendBtn.addEventListener('click', onConfirmAndGenerate)
   saveBtn.addEventListener('click', onSave)
@@ -275,8 +273,7 @@ function setFile (file) {
 /** Enable the Extract button only when both file and subject are provided */
 function checkExtractReady () {
   const hasFile = fileInput.files && fileInput.files[0]
-  const hasSubject = subjectInput.value.trim().length > 0
-  extractBtn.disabled = !(hasFile && hasSubject)
+  extractBtn.disabled = !hasFile
 }
 
 // ── Phase 1: Client-side NLP extraction ──────────────────────────────────────
@@ -287,7 +284,6 @@ function checkExtractReady () {
  */
 async function onExtract () {
   const file = fileInput.files[0]
-  const subject = subjectInput.value.trim()
 
   // Show spinner
   spinnerExtract.classList.remove('d-none')
@@ -319,7 +315,7 @@ async function onExtract () {
     }
 
     // Show confirmation modal (Phase 2)
-    showConfirmationModal(candidateWords, subject)
+    showConfirmationModal(candidateWords)
   } catch (error) {
     console.error('Extraction error:', error)
     spinnerExtract.classList.add('d-none')
@@ -430,7 +426,7 @@ function extractVocabulary (text) {
 
 // ── Phase 2: Confirmation modal ───────────────────────────────────────────────
 
-function showConfirmationModal (words, subject) {
+function showConfirmationModal (words) {
   // Reset state: every word starts selected
   selectedWords = new Set(words)
 
@@ -457,7 +453,7 @@ function showConfirmationModal (words, subject) {
 
   wordCountNote.textContent =
     `${words.length} words extracted locally. Claude will select the 15 hardest ` +
-    `general academic words and ignore ${subject}-specific terminology.`
+    `general academic words and ignore subject specific terminology.`
 
   setStep(2)
   confirmModal.show()
@@ -475,7 +471,6 @@ function showConfirmationModal (words, subject) {
  * sees questions appearing one by one instead of waiting 5-8 seconds.
  */
 async function onConfirmAndGenerate () {
-  const subject = subjectInput.value.trim()
 
   confirmModal.hide()
 
@@ -498,8 +493,7 @@ async function onConfirmAndGenerate () {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        words: [...selectedWords],
-        subject: subject
+        words: [...selectedWords]
       })
     })
 

@@ -51,13 +51,8 @@ app.post('/generate-quiz', async (req, res) => {
     if (!words || words.length === 0) {
       return res.status(400).json({ error: 'No words provided' })
     }
-    if (!subject) {
-      return res.status(400).json({ error: 'No subject provided' })
-    }
 
-    console.log(
-      `Generating quiz (streaming): ${words.length} candidate words, subject: "${subject}"`
-    )
+    console.log(`Generating quiz (streaming): ${words.length} curated words`)
 
     // Set headers for Server-Sent Events
     res.setHeader('Content-Type', 'text/event-stream')
@@ -71,16 +66,15 @@ app.post('/generate-quiz', async (req, res) => {
       messages: [
         {
           role: 'user',
-          content: `Here are words extracted from a ${subject} exam paper:
+          content: `The lecturer has curated the following list of vocabulary words from an exam paper. Generate one multiple-choice vocabulary question for each word.
+
+Words:
 ${words.join(', ')}
 
-Your task has two parts:
-1. Select the 15 most difficult GENERAL ACADEMIC vocabulary words from this list.
-   - IGNORE ${subject}-specific technical terms that students of ${subject} should already know.
-   - KEEP general academic English words that appear across many subjects (e.g. "contradict", "subsequent", "facilitate", "preliminary").
-   - If fewer than 15 suitable words exist, return as many as you can.
-
-2. For each selected word, generate ONE multiple-choice question (MCQ).
+For each word, create ONE question with:
+- A clear question about the word's meaning or usage in academic English
+- 4 answer options (A, B, C, D)
+- Mark which option is correct
 
 Return ONLY a JSON array. No explanation, no markdown, no extra text. Format:
 [
@@ -97,7 +91,10 @@ Return ONLY a JSON array. No explanation, no markdown, no extra text. Format:
 
     // Forward each text chunk to the browser as an SSE event
     for await (const chunk of stream) {
-      if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
+      if (
+        chunk.type === 'content_block_delta' &&
+        chunk.delta.type === 'text_delta'
+      ) {
         // SSE format: "data: <text>\n\n"
         res.write(`data: ${JSON.stringify({ text: chunk.delta.text })}\n\n`)
       }
@@ -112,10 +109,16 @@ Return ONLY a JSON array. No explanation, no markdown, no extra text. Format:
     console.error('Error in /generate-quiz:', error)
     // If headers haven't been sent yet, send JSON error
     if (!res.headersSent) {
-      res.status(500).json({ error: 'Failed to generate quiz. Please try again.' })
+      res
+        .status(500)
+        .json({ error: 'Failed to generate quiz. Please try again.' })
     } else {
       // Headers already sent (mid-stream error) — send error as SSE
-      res.write(`data: ${JSON.stringify({ error: 'Stream interrupted. Please try again.' })}\n\n`)
+      res.write(
+        `data: ${JSON.stringify({
+          error: 'Stream interrupted. Please try again.'
+        })}\n\n`
+      )
       res.end()
     }
   }
