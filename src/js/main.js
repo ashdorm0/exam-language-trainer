@@ -17,7 +17,7 @@ import {
 const API_BASE =
   'https://us-central1-exam-language-trainer-3abec.cloudfunctions.net/api'
 const DISPLAY_SIZE = 5 // Questions shown to lecturer at one time
-const POOL_SIZE = 30 // Words sent to Claude (Claude picks 15 from these)
+const POOL_SIZE = 30 // Max words shown to lecturer in confirmation modal
 
 /**
  * Common words list — loaded from libs/common_words.txt at startup.
@@ -71,7 +71,7 @@ async function loadCommonWords () {
       'Could not load common_words.txt — filtering will be limited.',
       error
     )
-    // App continues to work without the list; Claude will still filter subject terms
+    // App continues to work without the list; some common words may slip through to the lecturer's review
   }
 }
 
@@ -450,10 +450,6 @@ function showConfirmationModal (words) {
       console.log(`Selected: ${selectedWords.size} / ${words.length}`)
     })
   })
-
-  wordCountNote.textContent =
-    `${words.length} words extracted locally. Claude will select the 15 hardest ` +
-    `general academic words and ignore subject specific terminology.`
 
   setStep(2)
   confirmModal.show()
