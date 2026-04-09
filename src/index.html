@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -49,8 +50,9 @@
             background: var(--primary);
             color: white;
             padding: 1.25rem 0;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
         }
+
         .app-header h1 {
             font-size: 1.5rem;
             font-weight: 700;
@@ -58,12 +60,14 @@
             margin: 0;
             font-family: 'Georgia', serif;
         }
+
         .app-header .subtitle {
             font-size: 0.85rem;
             opacity: 0.8;
             font-family: Arial, sans-serif;
             margin: 0;
         }
+
         .header-lock {
             font-size: 1.2rem;
             margin-right: 0.5rem;
@@ -76,6 +80,7 @@
             border-bottom: 1px solid var(--border);
             padding: 1rem 0;
         }
+
         .step-item {
             display: flex;
             align-items: center;
@@ -86,12 +91,15 @@
             color: var(--muted);
             transition: color 0.2s;
         }
+
         .step-item.active {
             color: var(--primary);
         }
+
         .step-item.done {
             color: var(--step-done);
         }
+
         .step-num {
             width: 24px;
             height: 24px;
@@ -103,6 +111,7 @@
             font-size: 0.75rem;
             flex-shrink: 0;
         }
+
         .step-divider {
             flex: 1;
             height: 1px;
@@ -114,8 +123,9 @@
         .card {
             border: 1px solid var(--border);
             border-radius: 10px;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
         }
+
         .card-header {
             background: #f1f5f9;
             border-bottom: 1px solid var(--border);
@@ -125,6 +135,7 @@
             font-size: 0.9rem;
             padding: 0.85rem 1.25rem;
         }
+
         .step-badge {
             display: inline-block;
             background: var(--primary);
@@ -147,22 +158,30 @@
             cursor: pointer;
             background: #fafafa;
         }
-        .upload-zone:hover, .upload-zone.dragover {
+
+        .upload-zone:hover,
+        .upload-zone.dragover {
             border-color: var(--primary);
             background: #eff6ff;
         }
+
         .upload-zone .icon {
             font-size: 2.5rem;
             color: var(--muted);
             margin-bottom: 0.5rem;
         }
+
         .upload-zone p {
             font-family: Arial, sans-serif;
             color: var(--muted);
             font-size: 0.9rem;
             margin: 0;
         }
-        #fileInput { display: none; }
+
+        #fileInput {
+            display: none;
+        }
+
         .file-selected {
             font-family: Arial, sans-serif;
             font-size: 0.85rem;
@@ -197,8 +216,16 @@
             border-radius: 6px;
             transition: background 0.15s;
         }
-        .btn-extract:hover:not(:disabled) { background: var(--primary-dark); color: white; }
-        .btn-extract:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .btn-extract:hover:not(:disabled) {
+            background: var(--primary-dark);
+            color: white;
+        }
+
+        .btn-extract:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
 
         .btn-save {
             background: var(--success);
@@ -208,8 +235,15 @@
             font-weight: 600;
             border-radius: 6px;
         }
-        .btn-save:hover:not(:disabled) { background: #0a8060; color: white; }
-        .btn-save:disabled { opacity: 0.5; }
+
+        .btn-save:hover:not(:disabled) {
+            background: #0a8060;
+            color: white;
+        }
+
+        .btn-save:disabled {
+            opacity: 0.5;
+        }
 
         /* ── Quiz question cards ── */
         .question-card {
@@ -221,7 +255,11 @@
             position: relative;
             transition: box-shadow 0.2s;
         }
-        .question-card:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+
+        .question-card:hover {
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        }
+
         .question-num {
             font-family: Arial, sans-serif;
             font-size: 0.75rem;
@@ -231,27 +269,32 @@
             letter-spacing: 0.05em;
             margin-bottom: 0.4rem;
         }
+
         .question-text {
             font-size: 1rem;
             font-weight: 600;
             margin-bottom: 0.75rem;
             font-family: Arial, sans-serif;
         }
+
         .option-list {
             list-style: none;
             padding: 0;
             margin: 0;
         }
+
         .option-list li {
             font-family: Arial, sans-serif;
             font-size: 0.88rem;
             padding: 4px 0;
             color: var(--text);
         }
+
         .option-list li.correct {
             color: var(--success);
             font-weight: 600;
         }
+
         .word-tag {
             display: inline-block;
             background: #eff6ff;
@@ -265,6 +308,7 @@
             letter-spacing: 0.05em;
             margin-bottom: 0.4rem;
         }
+
         .btn-remove {
             position: absolute;
             top: 1rem;
@@ -279,6 +323,7 @@
             cursor: pointer;
             transition: all 0.15s;
         }
+
         .btn-remove:hover {
             background: #fef2f2;
         }
@@ -310,6 +355,16 @@
             font-size: 0.8rem;
             margin: 3px;
             color: var(--text);
+            cursor: pointer;
+            user-select: none;
+            transition: opacity 0.15s, background 0.15s;
+        }
+
+        .word-chip.deselected {
+            background: #e5e7eb;
+            color: #9ca3af;
+            text-decoration: line-through;
+            opacity: 0.5;
         }
 
         /* ── Success state ── */
@@ -319,6 +374,7 @@
             border-radius: 8px;
             padding: 1.5rem;
         }
+
         .share-url {
             font-family: 'Courier New', monospace;
             font-size: 0.85rem;
@@ -327,9 +383,12 @@
         }
 
         /* ── Hidden utility ── */
-        .d-none { display: none !important; }
+        .d-none {
+            display: none !important;
+        }
     </style>
 </head>
+
 <body>
 
     <!-- ══ Header ══ -->
@@ -345,12 +404,15 @@
                         <i class="bi bi-shield-check"></i>
                         Exam papers never leave your browser
                     </div>
-                    <div id="userInfo" class="d-none" style="font-family:Arial,sans-serif; font-size:0.78rem; color:rgba(255,255,255,0.85);">
-                        <a href="manage.html" style="color:white; text-decoration:none; font-weight:600; margin-right:0.75rem;">
+                    <div id="userInfo" class="d-none"
+                        style="font-family:Arial,sans-serif; font-size:0.78rem; color:rgba(255,255,255,0.85);">
+                        <a href="manage.html"
+                            style="color:white; text-decoration:none; font-weight:600; margin-right:0.75rem;">
                             <i class="bi bi-journal-text"></i> My Quizzes
                         </a>
                         <span id="userEmail"></span>
-                        <button class="btn btn-sm btn-outline-light ms-2" id="signOutBtn" style="font-size:0.7rem; padding:2px 8px;">
+                        <button class="btn btn-sm btn-outline-light ms-2" id="signOutBtn"
+                            style="font-size:0.7rem; padding:2px 8px;">
                             Sign Out
                         </button>
                     </div>
@@ -372,20 +434,23 @@
                 </p>
 
                 <div class="text-start">
-                    <label for="authEmail" class="form-label fw-semibold" style="font-family:Arial,sans-serif; font-size:0.85rem;">
+                    <label for="authEmail" class="form-label fw-semibold"
+                        style="font-family:Arial,sans-serif; font-size:0.85rem;">
                         Email
                     </label>
-                    <input type="email" class="form-control mb-3" id="authEmail"
-                           placeholder="lecturer@setu.ie" style="font-family:Arial,sans-serif;">
+                    <input type="email" class="form-control mb-3" id="authEmail" placeholder="lecturer@setu.ie"
+                        style="font-family:Arial,sans-serif;">
 
-                    <label for="authPassword" class="form-label fw-semibold" style="font-family:Arial,sans-serif; font-size:0.85rem;">
+                    <label for="authPassword" class="form-label fw-semibold"
+                        style="font-family:Arial,sans-serif; font-size:0.85rem;">
                         Password
                     </label>
-                    <input type="password" class="form-control mb-3" id="authPassword"
-                           placeholder="Password" style="font-family:Arial,sans-serif;">
+                    <input type="password" class="form-control mb-3" id="authPassword" placeholder="Password"
+                        style="font-family:Arial,sans-serif;">
                 </div>
 
-                <div id="authError" class="d-none alert alert-danger" style="font-family:Arial,sans-serif; font-size:0.85rem;"></div>
+                <div id="authError" class="d-none alert alert-danger"
+                    style="font-family:Arial,sans-serif; font-size:0.85rem;"></div>
 
                 <button class="btn btn-extract w-100 mb-2" id="signInBtn" style="font-family:Arial,sans-serif;">
                     Sign In
@@ -400,45 +465,46 @@
     <!-- ══ Lecturer Tool (hidden until authenticated) ══ -->
     <div id="section-lecturer-tool" class="d-none">
 
-    <!-- ══ Step Bar ══ -->
-    <div class="step-bar">
-        <div class="container">
-            <div class="d-flex align-items-center">
-                <div class="step-item active" id="step-indicator-1">
-                    <div class="step-num">1</div>
-                    <span>Upload &amp; Extract</span>
-                </div>
-                <div class="step-divider"></div>
-                <div class="step-item" id="step-indicator-2">
-                    <div class="step-num">2</div>
-                    <span>Confirm Words</span>
-                </div>
-                <div class="step-divider"></div>
-                <div class="step-item" id="step-indicator-3">
-                    <div class="step-num">3</div>
-                    <span>Review Quiz</span>
-                </div>
-                <div class="step-divider"></div>
-                <div class="step-item" id="step-indicator-4">
-                    <div class="step-num">4</div>
-                    <span>Save &amp; Share</span>
+        <!-- ══ Step Bar ══ -->
+        <div class="step-bar">
+            <div class="container">
+                <div class="d-flex align-items-center">
+                    <div class="step-item active" id="step-indicator-1">
+                        <div class="step-num">1</div>
+                        <span>Upload &amp; Extract</span>
+                    </div>
+                    <div class="step-divider"></div>
+                    <div class="step-item" id="step-indicator-2">
+                        <div class="step-num">2</div>
+                        <span>Confirm Words</span>
+                    </div>
+                    <div class="step-divider"></div>
+                    <div class="step-item" id="step-indicator-3">
+                        <div class="step-num">3</div>
+                        <span>Review Quiz</span>
+                    </div>
+                    <div class="step-divider"></div>
+                    <div class="step-item" id="step-indicator-4">
+                        <div class="step-num">4</div>
+                        <span>Save &amp; Share</span>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- ══ Main Content ══ -->
-    <main class="container py-4">
+        <!-- ══ Main Content ══ -->
+        <main class="container py-4">
 
-        <!-- ── STEP 1: Upload ── -->
-        <div id="section-upload">
+            <!-- ── STEP 1: Upload ── -->
+            <div id="section-upload">
                 <div class="card-body p-4">
 
                     <!-- Security notice -->
                     <div class="security-badge mb-4">
                         <i class="bi bi-shield-lock-fill"></i>
                         <strong>Your exam paper stays on your computer.</strong>
-                        Vocabulary is extracted locally in your browser. Only word lists — never exam content — are sent to the server.
+                        Vocabulary is extracted locally in your browser. Only word lists — never exam content — are sent
+                        to the server.
                     </div>
 
                     <!-- Upload zone -->
@@ -454,16 +520,16 @@
 
                     <!-- Subject input -->
                     <div class="mb-3 mt-3">
-                        <label for="subjectInput" class="form-label fw-semibold" style="font-family:Arial,sans-serif; font-size:0.9rem;">
+                        <label for="subjectInput" class="form-label fw-semibold"
+                            style="font-family:Arial,sans-serif; font-size:0.9rem;">
                             Exam Subject
                         </label>
-                        <input type="text"
-                               class="form-control"
-                               id="subjectInput"
-                               placeholder="e.g. Software Engineering, Economics, Biology…"
-                               style="font-family:Arial,sans-serif; max-width:400px;">
+                        <input type="text" class="form-control" id="subjectInput"
+                            placeholder="e.g. Software Engineering, Economics, Biology…"
+                            style="font-family:Arial,sans-serif; max-width:400px;">
                         <div class="form-text" style="font-family:Arial,sans-serif;">
-                            This tells Claude which technical terms to ignore — students of this subject already know them.
+                            This tells Claude which technical terms to ignore — students of this subject already know
+                            them.
                         </div>
                     </div>
 
@@ -479,74 +545,76 @@
                     </div>
                 </div>
             </div>
-        </div>
+    </div>
 
-        <!-- ── STEP 3: Quiz Preview (hidden initially) ── -->
-        <div id="section-quiz" class="d-none">
-            <div class="card mb-4">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <span>
-                        <span class="step-badge">Step 3</span> Review Quiz Questions
-                    </span>
-                    <span class="pool-info mb-0" id="poolInfo"></span>
-                </div>
-                <div class="card-body p-4">
-                    <p style="font-family:Arial,sans-serif; font-size:0.88rem; color:var(--muted); margin-bottom:1.25rem;">
-                        Showing 5 questions at a time. Remove any you don't want — a replacement will be pulled from the remaining pool automatically.
-                    </p>
-
-                    <!-- Spinner for API call -->
-                    <div class="d-flex align-items-center d-none" id="spinner-api">
-                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
-                        <span class="spinner-text">Streaming questions from Claude — they'll appear as they're generated…</span>
-                    </div>
-
-                    <!-- Question display area -->
-                    <div id="questionsDisplay"></div>
-
-                    <!-- Save button -->
-                    <div class="mt-4 d-none" id="saveSection">
-                        <button class="btn btn-save btn-lg" id="saveBtn">
-                            <i class="bi bi-cloud-upload"></i> Approve &amp; Save Quiz
-                        </button>
-                        <p class="mt-2" style="font-family:Arial,sans-serif; font-size:0.8rem; color:var(--muted);">
-                            Only the approved questions are saved — no exam content is stored.
-                        </p>
-                    </div>
-                </div>
+    <!-- ── STEP 3: Quiz Preview (hidden initially) ── -->
+    <div id="section-quiz" class="d-none">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>
+                    <span class="step-badge">Step 3</span> Review Quiz Questions
+                </span>
+                <span class="pool-info mb-0" id="poolInfo"></span>
             </div>
+            <div class="card-body p-4">
+                <p style="font-family:Arial,sans-serif; font-size:0.88rem; color:var(--muted); margin-bottom:1.25rem;">
+                    Showing 5 questions at a time. Remove any you don't want — a replacement will be pulled from the
+                    remaining pool automatically.
+                </p>
 
-            <!-- Save success -->
-            <div id="section-saved" class="d-none">
-                <div class="share-box">
-                    <h5 style="font-family:Arial,sans-serif; color: var(--success);">
-                        <i class="bi bi-check-circle-fill"></i> Quiz saved successfully!
-                    </h5>
-                    <p style="font-family:Arial,sans-serif; font-size:0.9rem; margin-top:0.75rem;">
-                        Share this link with your students:
-                    </p>
-                    <div class="share-url" id="shareUrl"></div>
-                    <button class="btn btn-sm mt-2" id="copyBtn"
-                            style="font-family:Arial,sans-serif; background:#e2e8f0;">
-                        <i class="bi bi-clipboard"></i> Copy link
+                <!-- Spinner for API call -->
+                <div class="d-flex align-items-center d-none" id="spinner-api">
+                    <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                    <span class="spinner-text">Streaming questions from Claude — they'll appear as they're
+                        generated…</span>
+                </div>
+
+                <!-- Question display area -->
+                <div id="questionsDisplay"></div>
+
+                <!-- Save button -->
+                <div class="mt-4 d-none" id="saveSection">
+                    <button class="btn btn-save btn-lg" id="saveBtn">
+                        <i class="bi bi-cloud-upload"></i> Approve &amp; Save Quiz
                     </button>
-                    <a class="btn btn-sm mt-2 ms-2" id="viewQuizBtn" target="_blank"
-                       style="font-family:Arial,sans-serif; background:var(--primary); color:white;">
-                        <i class="bi bi-eye"></i> View Quiz
-                    </a>
-                    <div style="margin-top:1.25rem;">
-                        <p style="font-family:Arial,sans-serif; font-size:0.9rem; color:var(--muted); margin-bottom:0.5rem;">
-                            Or display this QR code for students to scan:
-                        </p>
-                        <div id="qrCode"></div>
-                        <button class="btn btn-sm mt-2" id="downloadQrBtn"
-                                style="font-family:Arial,sans-serif; background:#e2e8f0;">
-                            <i class="bi bi-download"></i> Download QR code
-                        </button>
-                    </div>
+                    <p class="mt-2" style="font-family:Arial,sans-serif; font-size:0.8rem; color:var(--muted);">
+                        Only the approved questions are saved — no exam content is stored.
+                    </p>
                 </div>
             </div>
         </div>
+
+        <!-- Save success -->
+        <div id="section-saved" class="d-none">
+            <div class="share-box">
+                <h5 style="font-family:Arial,sans-serif; color: var(--success);">
+                    <i class="bi bi-check-circle-fill"></i> Quiz saved successfully!
+                </h5>
+                <p style="font-family:Arial,sans-serif; font-size:0.9rem; margin-top:0.75rem;">
+                    Share this link with your students:
+                </p>
+                <div class="share-url" id="shareUrl"></div>
+                <button class="btn btn-sm mt-2" id="copyBtn" style="font-family:Arial,sans-serif; background:#e2e8f0;">
+                    <i class="bi bi-clipboard"></i> Copy link
+                </button>
+                <a class="btn btn-sm mt-2 ms-2" id="viewQuizBtn" target="_blank"
+                    style="font-family:Arial,sans-serif; background:var(--primary); color:white;">
+                    <i class="bi bi-eye"></i> View Quiz
+                </a>
+                <div style="margin-top:1.25rem;">
+                    <p
+                        style="font-family:Arial,sans-serif; font-size:0.9rem; color:var(--muted); margin-bottom:0.5rem;">
+                        Or display this QR code for students to scan:
+                    </p>
+                    <div id="qrCode"></div>
+                    <button class="btn btn-sm mt-2" id="downloadQrBtn"
+                        style="font-family:Arial,sans-serif; background:#e2e8f0;">
+                        <i class="bi bi-download"></i> Download QR code
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     </main>
 
@@ -565,7 +633,8 @@
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="confirmModalLabel" style="font-family:Arial,sans-serif; font-weight:700;">
+                    <h5 class="modal-title" id="confirmModalLabel"
+                        style="font-family:Arial,sans-serif; font-weight:700;">
                         <i class="bi bi-shield-check text-success"></i>
                         Confirm Words to Send
                     </h5>
@@ -580,7 +649,8 @@
                         </span>
                     </div>
                     <p style="font-family:Arial,sans-serif; font-size:0.88rem; color:var(--muted);">
-                        Claude will select the 30 hardest general academic words from this list and generate quiz questions.
+                        Claude will select the 30 hardest general academic words from this list and generate quiz
+                        questions.
                         Subject-specific technical terms will be filtered out.
                     </p>
                     <div id="wordChips" style="line-height:2;"></div>
@@ -591,11 +661,11 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"
-                            style="font-family:Arial,sans-serif;">
+                        style="font-family:Arial,sans-serif;">
                         Cancel — go back
                     </button>
                     <button type="button" class="btn btn-extract" id="confirmSendBtn"
-                            style="font-family:Arial,sans-serif;">
+                        style="font-family:Arial,sans-serif;">
                         <i class="bi bi-send"></i> Send to Claude &amp; Generate Quiz
                     </button>
                 </div>
@@ -621,25 +691,24 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <label for="quizTitleInput" class="form-label fw-semibold" style="font-family:Arial,sans-serif; font-size:0.9rem;">
+                    <label for="quizTitleInput" class="form-label fw-semibold"
+                        style="font-family:Arial,sans-serif; font-size:0.9rem;">
                         Quiz Title
                     </label>
-                    <input type="text"
-                           class="form-control"
-                           id="quizTitleInput"
-                           placeholder="e.g. Software Engineering — Week 10 Vocabulary"
-                           style="font-family:Arial,sans-serif;">
+                    <input type="text" class="form-control" id="quizTitleInput"
+                        placeholder="e.g. Software Engineering — Week 10 Vocabulary"
+                        style="font-family:Arial,sans-serif;">
                     <div class="form-text" style="font-family:Arial,sans-serif;">
                         Students will see this title when they open the quiz.
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"
-                            style="font-family:Arial,sans-serif;">
+                        style="font-family:Arial,sans-serif;">
                         Cancel
                     </button>
                     <button type="button" class="btn btn-save" id="confirmSaveBtn" disabled
-                            style="font-family:Arial,sans-serif;">
+                        style="font-family:Arial,sans-serif;">
                         <i class="bi bi-check-lg"></i> Save Quiz
                     </button>
                 </div>
@@ -653,4 +722,5 @@
     <script type="module" src="js/main.js"></script>
 
 </body>
+
 </html>
