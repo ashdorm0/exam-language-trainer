@@ -1,79 +1,499 @@
-* {
+:root {
+    /* Background surfaces */
+    --bg-base: #0a0a0b;
+    /* main canvas */
+    --bg-sidebar: #050506;
+    /* sidebar, deeper than base */
+    --bg-surface: rgba(255, 255, 255, 0.03);
+    /* cards, panels */
+    --bg-surface-2: rgba(255, 255, 255, 0.06);
+    /* hover / raised */
+
+    /* Borders */
+    --border-subtle: rgba(255, 255, 255, 0.06);
+    --border-muted: rgba(255, 255, 255, 0.10);
+
+    /* Text */
+    --text-primary: #f5f5f5;
+    /* headings, main text */
+    --text-secondary: #e5e5e5;
+    /* body text */
+    --text-muted: #8a8a8a;
+    /* captions, hints */
+    --text-dim: #6b6b6b;
+    /* disabled, tertiary */
+    --text-faint: #4a4a4a;
+    /* dividers, faintest */
+
+    /* Accent — muted green, the only action color */
+    --accent: #7dd3a0;
+    --accent-soft: rgba(125, 211, 160, 0.08);
+    /* backgrounds */
+    --accent-border: rgba(125, 211, 160, 0.25);
+    /* borders */
+    --accent-strong: rgba(125, 211, 160, 0.30);
+    /* active borders */
+
+    /* Typography */
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+
+    /* Radii */
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+
+    /* Spacing */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-8: 32px;
+}
+
+/* Base reset — just the minimum to make the dark theme work */
+body {
+    background: var(--bg-base);
+    color: var(--text-secondary);
+    font-family: var(--font-sans);
     margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+}
+
+/* ─────────────────────────────────────────────
+   Legacy styles — to be refactored task by task
+   ───────────────────────────────────────────── */
+
+:root {
+    --primary: #1F3864;
+    --primary-dark: #162848;
+    --success: #2E7D4F;
+    --danger: #B04040;
+    --bg: #EFEFEB;
+    --surface: #FAFAF8;
+    --border: #C8C5BE;
+    --text: #1A1A1A;
+    --muted: #7A7A72;
+    --gold: #C8A951;
 }
 
 body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    min-height: 100vh;
+}
+
+/* ── Header ── */
+.app-header {
+    background: var(--primary);
+    color: white;
+    padding: 1.25rem 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.app-header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin: 0;
+    font-family: 'Georgia', serif;
+}
+
+.app-header .subtitle {
+    font-size: 0.85rem;
+    opacity: 0.8;
     font-family: Arial, sans-serif;
-    padding: 20px;
-    background-color: #f5f5f5;
-    zoom: 1.1;
+    margin: 0;
 }
 
-.container {
-    max-width: 800px;
-    margin: 0 auto;
+.header-lock {
+    font-size: 1.2rem;
+    margin-right: 0.5rem;
+    opacity: 0.9;
+}
+
+/* ── Step indicator ── */
+.step-bar {
     background: white;
-    padding: 30px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 0;
 }
 
-h1 {
-    color: #333;
-    margin-bottom: 10px;
+.step-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: Arial, sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--muted);
+    transition: color 0.2s;
 }
 
-.upload-section {
-    margin: 30px 0;
-    padding: 20px;
-    border: 2px dashed #ccc;
+.step-item.active {
+    color: var(--primary);
+}
+
+.step-item.done {
+    color: var(--step-done);
+}
+
+.step-num {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid currentColor;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+}
+
+.step-divider {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+    margin: 0 0.5rem;
+}
+
+/* ── Cards ── */
+.card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.card-header {
+    background: #f1f5f9;
+    border-bottom: 1px solid var(--border);
+    border-radius: 10px 10px 0 0 !important;
+    font-family: Arial, sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 0.85rem 1.25rem;
+}
+
+.step-badge {
+    display: inline-block;
+    background: var(--primary);
+    color: white;
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin-right: 0.5rem;
+    font-weight: 700;
+    font-family: Arial, sans-serif;
+}
+
+/* ── Upload zone ── */
+.upload-zone {
+    border: 2px dashed var(--border);
     border-radius: 8px;
+    padding: 2rem;
     text-align: center;
+    transition: all 0.2s;
+    cursor: pointer;
+    background: #fafafa;
 }
 
-button {
-    background-color: #007bff;
+.upload-zone:hover,
+.upload-zone.dragover {
+    border-color: var(--primary);
+    background: #eff6ff;
+}
+
+.upload-zone .icon {
+    font-size: 2.5rem;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+}
+
+.upload-zone p {
+    font-family: Arial, sans-serif;
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+#fileInput {
+    display: none;
+}
+
+.file-selected {
+    font-family: Arial, sans-serif;
+    font-size: 0.85rem;
+    color: var(--success);
+    margin-top: 0.5rem;
+    display: none;
+}
+
+/* ── Security notice ── */
+.security-badge {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 6px;
+    padding: 0.6rem 0.9rem;
+    font-family: Arial, sans-serif;
+    font-size: 0.8rem;
+    color: #166534;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+/* ── Buttons ── */
+.btn-extract {
+    background: var(--primary);
     color: white;
     border: none;
-    padding: 10px 20px;
-    font-size: 16px;
+    font-family: Arial, sans-serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 0.65rem 1.5rem;
+    border-radius: 6px;
+    transition: background 0.15s;
+}
+
+.btn-extract:hover:not(:disabled) {
+    background: var(--primary-dark);
+    color: white;
+}
+
+.btn-extract:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-save {
+    background: var(--success);
+    color: white;
+    border: none;
+    font-family: Arial, sans-serif;
+    font-weight: 600;
+    border-radius: 6px;
+}
+
+.btn-save:hover:not(:disabled) {
+    background: #0a8060;
+    color: white;
+}
+
+.btn-save:disabled {
+    opacity: 0.5;
+}
+
+/* ── Quiz question cards ── */
+.question-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1rem;
+    position: relative;
+    transition: box-shadow 0.2s;
+}
+
+.question-card:hover {
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+.question-num {
+    font-family: Arial, sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.4rem;
+}
+
+.question-text {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    font-family: Arial, sans-serif;
+}
+
+.option-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.option-list li {
+    font-family: Arial, sans-serif;
+    font-size: 0.88rem;
+    padding: 4px 0;
+    color: var(--text);
+}
+
+.option-list li.correct {
+    color: var(--success);
+    font-weight: 600;
+}
+
+.word-tag {
+    display: inline-block;
+    background: #eff6ff;
+    color: var(--primary);
+    font-family: Arial, sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 2px 8px;
     border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.4rem;
+}
+
+.btn-remove {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: 1px solid #fecaca;
+    color: var(--danger);
+    border-radius: 4px;
+    font-size: 0.78rem;
+    font-family: Arial, sans-serif;
+    padding: 3px 8px;
     cursor: pointer;
-    margin-top: 10px;
+    transition: all 0.15s;
 }
 
-button:hover {
-    background-color: #0056b3;
+.btn-remove:hover {
+    background: #fef2f2;
 }
 
-.output-section {
-    margin-top: 30px;
-    padding: 20px;
-    background-color: #f9f9f9;
+/* ── Pool counter ── */
+.pool-info {
+    font-family: Arial, sans-serif;
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin-bottom: 1rem;
+}
+
+/* ── Spinner ── */
+.spinner-text {
+    font-family: Arial, sans-serif;
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin-left: 0.5rem;
+}
+
+/* ── Modal word chips ── */
+.word-chip {
+    display: inline-block;
+    background: #f1f5f9;
+    border: 1px solid var(--border);
     border-radius: 4px;
-    min-height: 100px;
+    padding: 3px 10px;
+    font-family: Arial, sans-serif;
+    font-size: 0.8rem;
+    margin: 3px;
+    color: var(--text);
+    cursor: pointer;
+    user-select: none;
+    transition: opacity 0.15s, background 0.15s;
 }
 
-.landing {
-    text-align: center;
-    padding: 60px 20px;
+.word-chip.deselected {
+    background: #e5e7eb;
+    color: #9ca3af;
+    text-decoration: line-through;
+    opacity: 0.5;
 }
 
-.landing h1 {
-    font-size: 2.2rem;
-    margin-bottom: 16px;
+/* ── Success state ── */
+.share-box {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 8px;
+    padding: 1.5rem;
 }
 
-.landing p {
-    color: #666;
-    font-size: 1.1rem;
-    margin-bottom: 40px;
+.share-url {
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    word-break: break-all;
+    color: var(--primary);
 }
 
-.start-btn {
-    font-size: 1.1rem;
-    padding: 14px 36px;
-    margin-top: 0;
+/* ── Hidden utility ── */
+.d-none {
+    display: none !important;
+}
+
+/* ─────────────────────────────────────────────
+   Task 2 — Sidebar layout shell
+   ───────────────────────────────────────────── */
+
+/* The lecturer tool becomes a two-column grid: sidebar + main */
+.app-shell {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    min-height: calc(100vh - 80px);
+    /* 80px = header height, adjust if needed */
+}
+
+.app-sidebar {
+    background: var(--bg-sidebar);
+    border-right: 1px solid var(--border-subtle);
+    padding: var(--space-5) 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-brand {
+    padding: 0 var(--space-5) var(--space-6);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.sidebar-brand-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.sidebar-brand-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+}
+
+.sidebar-brand-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+.sidebar-brand-note {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin: var(--space-2) 0 0;
+    line-height: 1.4;
+}
+
+.sidebar-nav {
+    padding: var(--space-5) var(--space-3);
+    flex: 1;
+}
+
+.sidebar-nav-heading {
+    font-size: 10px;
+    color: var(--text-faint);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin: 0 var(--space-2) var(--space-3);
+}
+
+/* Main content area */
+.app-main {
+    padding: var(--space-8) 48px;
+    color: var(--text-secondary);
 }
