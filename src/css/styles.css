@@ -497,3 +497,80 @@ body {
     padding: var(--space-8) 48px;
     color: var(--text-secondary);
 }
+
+/* ─────────────────────────────────────────────
+   Task 3 — Sidebar step buttons
+   ───────────────────────────────────────────── */
+
+.sidebar-step {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 10px var(--space-3);
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  text-align: left;
+  margin-bottom: 6px;
+  cursor: default;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.sidebar-step-num {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-dim);
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sidebar-step-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar-step-title {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.sidebar-step-sub {
+  font-size: 10px;
+  color: var(--text-faint);
+}
+
+/* Active state — the step the user is currently on */
+.sidebar-step.active {
+  background: var(--accent-soft);
+  border-color: var(--accent-strong);
+}
+
+.sidebar-step.active .sidebar-step-num {
+  background: var(--accent);
+  color: var(--bg-base);
+}
+
+.sidebar-step.active .sidebar-step-title {
+  color: var(--text-secondary);
+}
+
+.sidebar-step.active .sidebar-step-sub {
+  color: var(--text-dim);
+}
+
+/* Done state — steps the user has completed */
+.sidebar-step.done .sidebar-step-num {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid var(--accent-border);
+}
+
+.sidebar-step.done .sidebar-step-title {
+  color: var(--text-muted);
+}

@@ -467,7 +467,6 @@ function showConfirmationModal (words) {
  * sees questions appearing one by one instead of waiting 5-8 seconds.
  */
 async function onConfirmAndGenerate () {
-
   confirmModal.hide()
 
   // Show quiz section with spinner
@@ -851,9 +850,20 @@ async function onConfirmSave () {
 
 function setStep (activeStep) {
   for (let i = 1; i <= 4; i++) {
-    const el = document.getElementById(`step-indicator-${i}`)
-    el.classList.remove('active', 'done')
-    if (i < activeStep) el.classList.add('done')
-    if (i === activeStep) el.classList.add('active')
+    // Old top step bar (still live — will be removed in a later task)
+    const topEl = document.getElementById(`step-indicator-${i}`)
+    if (topEl) {
+      topEl.classList.remove('active', 'done')
+      if (i < activeStep) topEl.classList.add('done')
+      if (i === activeStep) topEl.classList.add('active')
+    }
+
+    // New sidebar step indicator
+    const sideEl = document.getElementById(`sidebar-step-${i}`)
+    if (sideEl) {
+      sideEl.classList.remove('active', 'done')
+      if (i < activeStep) sideEl.classList.add('done')
+      if (i === activeStep) sideEl.classList.add('active')
+    }
   }
 }
