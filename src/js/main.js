@@ -444,6 +444,14 @@ function extractVocabulary (text) {
       .map(normalizeWord)
       .filter(Boolean)
   )
+  const dateTerms = new Set(
+    doc
+      .match('#Date')
+      .terms()
+      .out('array')
+      .map(normalizeWord)
+      .filter(Boolean)
+  )
 
   const allTerms = doc.not('#ProperNoun').terms().out('array')
   const filteredTerms = removeStopwords(
@@ -454,7 +462,19 @@ function extractVocabulary (text) {
   const stats = new Map()
 
   for (const term of filteredTerms) {
-    if (!isCandidateWord(term)) continue
+    if (!isCandidateWord(term, dateTerms)) continue
+
+    const posScore = getPartOfSpeechScore(
+      term,
+      nouns,
+      verbs,
+      adjectives,
+      adverbs
+    )
+
+    // Keep strong academic-looking terms even if POS tagging is uncertain,
+    // but reject short unknown-POS noise.
+    if (posScore === 0 && !hasAcademicSuffix(term) && term.length < 7) continue
 
     const entry = stats.get(term) || {
       word: term,
@@ -464,10 +484,7 @@ function extractVocabulary (text) {
     }
 
     entry.frequency += 1
-    entry.posScore = Math.max(
-      entry.posScore,
-      getPartOfSpeechScore(term, nouns, verbs, adjectives, adverbs)
-    )
+    entry.posScore = Math.max(entry.posScore, posScore)
 
     stats.set(term, entry)
   }
@@ -499,9 +516,72 @@ function normalizeWord (word) {
   return word.toLowerCase().replace(/^[^a-z]+|[^a-z]+$/g, '').trim()
 }
 
-function isCandidateWord (word) {
+function getBaseForms (word) {
+  const forms = new Set([word])
+
+  if (word.length > 3 && word.endsWith('s')) {
+    forms.add(word.slice(0, -1))
+  }
+
+  if (word.length > 5 && word.endsWith('es')) {
+    forms.add(word.slice(0, -2))
+  }
+
+  if (word.length > 5 && word.endsWith('ies')) {
+    forms.add(`${word.slice(0, -3)}y`)
+  }
+
+  if (word.length > 5 && word.endsWith('ed')) {
+    const stem = word.slice(0, -2)
+    forms.add(stem)
+    forms.add(`${stem}e`)
+
+    // Handle doubled consonants: stopped -> stop, planned -> plan
+    if (/([b-df-hj-np-tv-z])\1$/.test(stem)) {
+      forms.add(stem.slice(0, -1))
+    }
+  }
+
+  if (word.length > 6 && word.endsWith('ing')) {
+    const stem = word.slice(0, -3)
+    forms.add(stem)
+    forms.add(`${stem}e`)
+
+    // Handle doubled consonants: running -> run, sitting -> sit
+    if (/([b-df-hj-np-tv-z])\1$/.test(stem)) {
+      forms.add(stem.slice(0, -1))
+    }
+  }
+
+  if (word.length > 5 && word.endsWith('er')) {
+    const stem = word.slice(0, -2)
+    forms.add(stem)
+    forms.add(`${stem}e`)
+
+    if (/([b-df-hj-np-tv-z])\1$/.test(stem)) {
+      forms.add(stem.slice(0, -1))
+    }
+  }
+
+  if (word.length > 6 && word.endsWith('est')) {
+    const stem = word.slice(0, -3)
+    forms.add(stem)
+    forms.add(`${stem}e`)
+
+    if (/([b-df-hj-np-tv-z])\1$/.test(stem)) {
+      forms.add(stem.slice(0, -1))
+    }
+  }
+
+  return [...forms].filter(form => form.length >= 3)
+}
+
+function isCandidateWord (word, dateTerms = new Set()) {
   if (!/^[a-z]+$/.test(word) || word.length < 4) return false
-  if (COMMON_WORDS.has(word)) return false
+  if (/^(?:null|true|false|undefined|localhost)$/i.test(word)) return false
+  if (dateTerms.has(word)) return false
+  const baseForms = getBaseForms(word)
+  if (baseForms.some(form => COMMON_WORDS.has(form))) return false
   if (isMashedCompound(word)) return false
   return true
 }
@@ -562,10 +642,10 @@ function splitIntoKnownWords (word) {
 
 function getPartOfSpeechScore (word, nouns, verbs, adjectives, adverbs) {
   if (adjectives.has(word)) return 1.2
-  if (verbs.has(word)) return 1.1
-  if (nouns.has(word)) return 0.9
-  if (adverbs.has(word)) return 0.8
-  return 0.4
+  if (nouns.has(word)) return 1.05
+  if (verbs.has(word)) return 0.9
+  if (adverbs.has(word)) return 0
+  return 0.25
 }
 
 function estimateSyllables (word) {
@@ -585,7 +665,8 @@ function estimateSyllables (word) {
 }
 
 function hasAcademicSuffix (word) {
-  return /(?:tion|sion|ment|ness|ity|ism|ist|ive|ous|al|ary|ory|ence|ance|ship|hood|able|ible|ically|ology|graphy)$/i.test(
+  if (word.length < 7) return false
+  return /(?:tion|sion|ment|ness|ity|ism|ist|ive|ous|ary|ory|ence|ance|ship|hood|able|ible|ically|ology|graphy)$/i.test(
     word
   )
 }
@@ -593,6 +674,12 @@ function hasAcademicSuffix (word) {
 function scoreDifficulty (entry) {
   const { word, frequency, posScore } = entry
   const syllables = estimateSyllables(word)
+
+  const isLowSignalSimpleWord =
+    !hasAcademicSuffix(word) && syllables < 3 && word.length < 10
+
+  // Reject one-off simple nouns/verbs that are likely low-value noise.
+  if (isLowSignalSimpleWord && frequency < 2) return -1
 
   let score = 0
 
