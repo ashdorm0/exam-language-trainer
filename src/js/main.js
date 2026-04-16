@@ -132,27 +132,25 @@ document.addEventListener('DOMContentLoaded', async () => {
   // ── Auth events ──
   document.getElementById('signInBtn').addEventListener('click', onSignIn)
   document.getElementById('registerBtn').addEventListener('click', onRegister)
-  document.getElementById('signOutBtn').addEventListener('click', onSignOut)
+  document.getElementById('sidebarSignOutBtn').addEventListener('click', onSignOut)
 
   // Listen for auth state changes — this fires on page load too
   onAuthStateChanged(auth, user => {
     currentUser = user
     const authSection = document.getElementById('section-auth')
     const toolSection = document.getElementById('section-lecturer-tool')
-    const userInfo = document.getElementById('userInfo')
-    const userEmail = document.getElementById('userEmail')
+    const sidebarUserEmail = document.getElementById('sidebarUserEmail')
 
     if (user) {
       // Logged in — show lecturer tool, hide sign-in
       authSection.classList.add('d-none')
       toolSection.classList.remove('d-none')
-      userInfo.classList.remove('d-none')
-      userEmail.textContent = user.email
+      sidebarUserEmail.textContent = user.email
     } else {
       // Logged out — show sign-in, hide lecturer tool
       authSection.classList.remove('d-none')
       toolSection.classList.add('d-none')
-      userInfo.classList.add('d-none')
+      sidebarUserEmail.textContent = ''
     }
   })
 

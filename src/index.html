@@ -26,35 +26,7 @@
 
 <body>
 
-    <!-- ══ Header ══ -->
-    <header class="app-header">
-        <div class="container">
-            <div class="d-flex align-items-center justify-content-between">
-                <div>
-                    <h1><span class="header-lock"></span>Exam Language Trainer</h1>
-                    <p class="subtitle">Vocabulary Quiz Generator</p>
-                </div>
-                <div class="d-flex align-items-center gap-3">
-                    <div class="security-badge" style="font-size:0.75rem;">
-                        <i class="bi bi-shield-check"></i>
-                        Exam papers never leave your browser
-                    </div>
-                    <div id="userInfo" class="d-none"
-                        style="font-family:Arial,sans-serif; font-size:0.78rem; color:rgba(255,255,255,0.85);">
-                        <a href="manage.html"
-                            style="color:white; text-decoration:none; font-weight:600; margin-right:0.75rem;">
-                            <i class="bi bi-journal-text"></i> My Quizzes
-                        </a>
-                        <span id="userEmail"></span>
-                        <button class="btn btn-sm btn-outline-light ms-2" id="signOutBtn"
-                            style="font-size:0.7rem; padding:2px 8px;">
-                            Sign Out
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </header>
+   
 
     <!-- ══ Sign-In Section ══ -->
     <div id="section-auth" class="container py-5" style="max-width:440px;">
@@ -135,6 +107,18 @@
                         </div>
                     </div>
                 </nav>
+                <!-- User controls: shown when signed in -->
+                <div class="sidebar-footer" id="sidebarUserInfo">
+                    <a href="manage.html" class="sidebar-footer-link">
+                        <i class="bi bi-journal-text"></i>
+                        <span>My quizzes</span>
+                    </a>
+                    <div class="sidebar-user">
+                        <div class="sidebar-user-label">Signed in</div>
+                        <div class="sidebar-user-email" id="sidebarUserEmail"></div>
+                        <button type="button" class="sidebar-signout-btn" id="sidebarSignOutBtn">Sign out</button>
+                    </div>
+                </div>
             </aside>
 
             <!-- Main content -->
