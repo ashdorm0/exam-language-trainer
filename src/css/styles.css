@@ -3,8 +3,9 @@
    before the inline block means it loses; we bump specificity
    with html+body). */
 html body {
-  background: var(--bg-base);
+    background: var(--bg-base);
 }
+
 :root {
     /* Background surfaces */
     --bg-base: #0a0a0b;
@@ -75,10 +76,8 @@ body {
 .app-shell {
     display: grid;
     grid-template-columns: 220px 1fr;
-    height: calc(100vh - 80px);
-    /* fixed height, not min-height */
+    height: 100vh;
     overflow: hidden;
-    /* prevent double-scrollbars */
 }
 
 .app-sidebar {
@@ -534,172 +533,172 @@ body {
 
 /* ── Section-quiz: darken the card wrapper ── */
 #section-quiz .card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  box-shadow: none;
-  border-radius: var(--radius-lg);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    box-shadow: none;
+    border-radius: var(--radius-lg);
 }
 
 #section-quiz .card-header {
-  background: transparent;
-  border-bottom: 1px solid var(--border-subtle);
-  color: var(--text-secondary);
-  font-family: var(--font-sans);
-  padding: var(--space-4) var(--space-5);
+    background: transparent;
+    border-bottom: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+    font-family: var(--font-sans);
+    padding: var(--space-4) var(--space-5);
 }
 
 #section-quiz .card-header .step-badge {
-  background: var(--accent-soft);
-  color: var(--accent);
-  border-radius: var(--radius-sm);
-  font-weight: 500;
-  font-size: 11px;
-  padding: 3px 8px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-radius: var(--radius-sm);
+    font-weight: 500;
+    font-size: 11px;
+    padding: 3px 8px;
 }
 
 #section-quiz .pool-info {
-  color: var(--text-dim);
-  font-size: 12px;
+    color: var(--text-dim);
+    font-size: 12px;
 }
 
 #section-quiz .card-body p {
-  color: var(--text-muted) !important;
+    color: var(--text-muted) !important;
 }
 
 /* ── Question cards inside the review ── */
 #section-quiz .question-card {
-  background: var(--bg-surface-2);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  color: var(--text-secondary);
+    background: var(--bg-surface-2);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
 }
 
 #section-quiz .question-card:hover {
-  box-shadow: none;
-  border-color: var(--border-muted);
+    box-shadow: none;
+    border-color: var(--border-muted);
 }
 
 #section-quiz .question-num {
-  color: var(--text-dim);
+    color: var(--text-dim);
 }
 
 #section-quiz .question-text {
-  color: var(--text-primary);
+    color: var(--text-primary);
 }
 
 #section-quiz .option-list li {
-  color: var(--text-muted);
+    color: var(--text-muted);
 }
 
 #section-quiz .option-list li.correct {
-  color: var(--accent);
+    color: var(--accent);
 }
 
 #section-quiz .word-tag {
-  background: var(--accent-soft);
-  color: var(--accent);
-  border-radius: var(--radius-sm);
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-radius: var(--radius-sm);
 }
 
 /* Remove button on question cards — keep red but muted for dark theme */
 #section-quiz .btn-remove {
-  background: transparent;
-  border: 1px solid var(--border-muted);
-  color: var(--text-muted);
+    background: transparent;
+    border: 1px solid var(--border-muted);
+    color: var(--text-muted);
 }
 
 #section-quiz .btn-remove:hover {
-  background: var(--bg-surface);
-  color: var(--text-secondary);
-  border-color: var(--border-muted);
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+    border-color: var(--border-muted);
 }
 
 /* ── Spinner when API is streaming ── */
 #section-quiz .spinner-text {
-  color: var(--text-muted);
+    color: var(--text-muted);
 }
 
 /* ── Save button — primary action, green ── */
 #section-quiz .btn-save {
-  background: var(--accent);
-  color: var(--bg-base);
-  border: none;
-  font-family: var(--font-sans);
-  font-weight: 500;
-  padding: 10px 20px;
-  border-radius: var(--radius-md);
-  font-size: 13px;
+    background: var(--accent);
+    color: var(--bg-base);
+    border: none;
+    font-family: var(--font-sans);
+    font-weight: 500;
+    padding: 10px 20px;
+    border-radius: var(--radius-md);
+    font-size: 13px;
 }
 
 #section-quiz .btn-save:hover:not(:disabled) {
-  background: #a0e2be;
-  color: var(--bg-base);
+    background: #a0e2be;
+    color: var(--bg-base);
 }
 
 #section-quiz .btn-save:disabled {
-  background: var(--bg-surface-2);
-  color: var(--text-faint);
+    background: var(--bg-surface-2);
+    color: var(--text-faint);
 }
 
 /* ── Section-saved: the share page ── */
 #section-saved .share-box {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
-  padding: var(--space-6);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
 }
 
 #section-saved .share-box h5 {
-  color: var(--accent);
-  font-family: var(--font-sans);
-  font-weight: 500;
-  font-size: 16px;
-  margin-bottom: var(--space-4);
+    color: var(--accent);
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 16px;
+    margin-bottom: var(--space-4);
 }
 
 #section-saved .share-box p {
-  color: var(--text-muted);
-  font-family: var(--font-sans);
-  font-size: 13px;
+    color: var(--text-muted);
+    font-family: var(--font-sans);
+    font-size: 13px;
 }
 
 #section-saved .share-url {
-  background: var(--accent-soft);
-  border: 1px solid var(--accent-border);
-  color: var(--accent);
-  padding: 10px 12px;
-  border-radius: var(--radius-sm);
-  font-family: 'Courier New', monospace;
-  font-size: 12px;
-  word-break: break-all;
-  display: block;
-  margin-top: var(--space-3);
+    background: var(--accent-soft);
+    border: 1px solid var(--accent-border);
+    color: var(--accent);
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    word-break: break-all;
+    display: block;
+    margin-top: var(--space-3);
 }
 
 /* Buttons on the share screen: copy link, view quiz, download QR */
 #section-saved .btn {
-  background: transparent !important;
-  color: var(--text-secondary) !important;
-  border: 1px solid var(--border-muted) !important;
-  padding: 8px 12px !important;
-  border-radius: var(--radius-md) !important;
-  font-family: var(--font-sans) !important;
-  font-size: 12px !important;
-  font-weight: 400 !important;
+    background: transparent !important;
+    color: var(--text-secondary) !important;
+    border: 1px solid var(--border-muted) !important;
+    padding: 8px 12px !important;
+    border-radius: var(--radius-md) !important;
+    font-family: var(--font-sans) !important;
+    font-size: 12px !important;
+    font-weight: 400 !important;
 }
 
 #section-saved .btn:hover {
-  background: var(--bg-surface) !important;
-  color: var(--text-primary) !important;
+    background: var(--bg-surface) !important;
+    color: var(--text-primary) !important;
 }
 
 /* QR container */
 #section-saved #qrCode {
-  display: inline-block;
-  background: white;
-  padding: 8px;
-  border-radius: var(--radius-sm);
-  margin-top: var(--space-3);
+    display: inline-block;
+    background: white;
+    padding: 8px;
+    border-radius: var(--radius-sm);
+    margin-top: var(--space-3);
 }
 
 /* ─────────────────────────────────────────────
@@ -707,66 +706,66 @@ body {
    ───────────────────────────────────────────── */
 
 .sidebar-footer {
-  padding: var(--space-4) var(--space-5);
-  border-top: 1px solid var(--border-subtle);
+    padding: var(--space-4) var(--space-5);
+    border-top: 1px solid var(--border-subtle);
 }
 
 .sidebar-footer-link {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  color: var(--text-muted);
-  text-decoration: none;
-  font-size: 12px;
-  font-family: var(--font-sans);
-  padding: 6px 0;
-  margin-bottom: var(--space-3);
-  transition: color 0.15s;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 12px;
+    font-family: var(--font-sans);
+    padding: 6px 0;
+    margin-bottom: var(--space-3);
+    transition: color 0.15s;
 }
 
 .sidebar-footer-link:hover {
-  color: var(--text-secondary);
+    color: var(--text-secondary);
 }
 
 .sidebar-footer-link .bi {
-  color: var(--accent);
-  font-size: 14px;
+    color: var(--accent);
+    font-size: 14px;
 }
 
 .sidebar-user {
-  padding-top: var(--space-3);
-  border-top: 1px solid var(--border-subtle);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--border-subtle);
 }
 
 .sidebar-user-label {
-  font-size: 10px;
-  color: var(--text-faint);
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  margin-bottom: var(--space-1);
+    font-size: 10px;
+    color: var(--text-faint);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: var(--space-1);
 }
 
 .sidebar-user-email {
-  font-size: 11px;
-  color: var(--text-muted);
-  margin-bottom: var(--space-3);
-  word-break: break-all;
-  line-height: 1.3;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: var(--space-3);
+    word-break: break-all;
+    line-height: 1.3;
 }
 
 .sidebar-signout-btn {
-  background: transparent;
-  border: 1px solid var(--border-muted);
-  color: var(--text-muted);
-  padding: 5px 10px;
-  border-radius: var(--radius-sm);
-  font-size: 11px;
-  font-family: var(--font-sans);
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+    background: transparent;
+    border: 1px solid var(--border-muted);
+    color: var(--text-muted);
+    padding: 5px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    font-family: var(--font-sans);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
 }
 
 .sidebar-signout-btn:hover {
-  background: var(--bg-surface);
-  color: var(--text-secondary);
+    background: var(--bg-surface);
+    color: var(--text-secondary);
 }
