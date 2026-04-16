@@ -1,329 +1,370 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Exam Language Trainer — Vocabulary Quiz</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exam Language Trainer — Vocabulary Quiz</title>
 
-    <!-- Google Font — DM Sans -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Our design tokens -->
+  <link href="./css/styles.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    /* ── Quiz page layout ── */
+    .quiz-page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-5);
+    }
 
-    <style>
-        :root {
-            --primary: #46ACC2;
-            --primary-dark: #3d97ab;
-            --primary-light: #42F2F7;
-            --accent: #498C8A;
-            --success: #2a9d6e;
-            --danger: #d94444;
-            --bg: #f5f8f8;
-            --surface: #ffffff;
-            --border: #d8e3e3;
-            --text: #4B6858;
-            --text-dark: #2d3d33;
-            --muted: #6b8076;
-        }
+    /* ── Main card ── */
+    .quiz-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--space-8);
+      width: 100%;
+      max-width: 640px;
+    }
 
-        * { box-sizing: border-box; }
+    /* ── Brand mark at the top ── */
+    .quiz-brand {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      margin-bottom: var(--space-8);
+    }
 
-        body {
-            background: var(--bg);
-            color: var(--text);
-            font-family: 'DM Sans', sans-serif;
-            min-height: 100vh;
-            line-height: 1.6;
-        }
+    .quiz-brand-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--accent);
+      border-radius: 50%;
+    }
 
-        /* ── Header ── */
-        .app-header {
-            background: linear-gradient(135deg, #498C8A 0%, #3d7a78 100%);
-            color: white;
-            padding: 1.1rem 0;
-            border-bottom: 3px solid var(--primary-light);
-        }
-        .app-header h1 {
-            font-size: 1.35rem;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-            margin: 0;
-        }
-        .app-header .subtitle {
-            font-size: 0.82rem;
-            opacity: 0.75;
-            margin: 0;
-            font-weight: 400;
-        }
+    .quiz-brand-label {
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
 
-        /* ── Main container ── */
-        .quiz-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            box-shadow: 0 2px 8px rgba(75, 104, 88, 0.06);
-            padding: 2rem;
-            margin-top: 2rem;
-        }
+    /* ── Landing screen ── */
+    .landing {
+      text-align: center;
+    }
 
-        /* ── Landing screen ── */
-        .landing-icon {
-            font-size: 3rem;
-            color: var(--primary);
-            margin-bottom: 1rem;
-        }
-        .landing h2 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            color: var(--text-dark);
-        }
-        .landing p {
-            color: var(--muted);
-            font-size: 0.95rem;
-            margin-bottom: 1.5rem;
-        }
+    .landing-icon {
+      font-size: 28px;
+      color: var(--accent);
+      margin-bottom: var(--space-4);
+    }
 
-        /* ── Progress bar ── */
-        .progress-label {
-            font-size: 0.8rem;
-            color: var(--muted);
-            margin-bottom: 0.4rem;
-            font-weight: 500;
-        }
-        .progress {
-            height: 6px;
-            border-radius: 10px;
-            margin-bottom: 1.5rem;
-            background: var(--border);
-        }
-        .progress-bar {
-            background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%);
-            border-radius: 10px;
-            transition: width 0.3s ease;
-        }
+    .landing h2 {
+      font-size: 22px;
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: var(--space-2);
+    }
 
-        /* ── Question ── */
-        .word-tag {
-            display: inline-block;
-            background: rgba(66, 242, 247, 0.12);
-            color: var(--accent);
-            font-size: 0.72rem;
-            font-weight: 700;
-            padding: 3px 10px;
-            border-radius: 5px;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-            margin-bottom: 0.75rem;
-        }
-        .question-text {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 1.25rem;
-            line-height: 1.5;
-            color: var(--text-dark);
-        }
+    .landing p {
+      color: var(--text-muted);
+      font-size: 13px;
+      margin-bottom: var(--space-6);
+      line-height: 1.5;
+    }
 
-        /* ── Answer options ── */
-        .option {
-            display: block;
-            width: 100%;
-            text-align: left;
-            padding: 0.85rem 1.1rem;
-            margin-bottom: 0.55rem;
-            background: #fafcfc;
-            border: 2px solid var(--border);
-            border-radius: 10px;
-            font-size: 0.92rem;
-            color: var(--text);
-            cursor: pointer;
-            transition: all 0.15s ease;
-            font-weight: 400;
-        }
-        .option:hover {
-            border-color: var(--primary);
-            background: rgba(66, 242, 247, 0.06);
-        }
-        .option.selected {
-            border-color: var(--primary);
-            background: rgba(70, 172, 194, 0.1);
-            font-weight: 600;
-            color: var(--text-dark);
-        }
-        .option.correct {
-            border-color: var(--success);
-            background: rgba(42, 157, 110, 0.08);
-            color: #166534;
-            font-weight: 600;
-        }
-        .option.incorrect {
-            border-color: var(--danger);
-            background: #fef2f2;
-            color: #991b1b;
-        }
+    /* ── Start / primary buttons ── */
+    .btn-start {
+      background: var(--accent);
+      color: var(--bg-base);
+      border: none;
+      font-weight: 500;
+      font-size: 13px;
+      padding: 10px 24px;
+      border-radius: var(--radius-md);
+      font-family: var(--font-sans);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
 
-        /* ── Nav button ── */
-        .btn-next {
-            background: var(--primary);
-            color: white;
-            border: none;
-            font-weight: 600;
-            font-size: 0.95rem;
-            padding: 0.7rem 1.75rem;
-            border-radius: 8px;
-            margin-top: 1rem;
-            transition: all 0.2s ease;
-        }
-        .btn-next:hover:not(:disabled) {
-            background: var(--primary-dark);
-            color: white;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(70, 172, 194, 0.3);
-        }
-        .btn-next:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-start:hover {
+      background: #a0e2be;
+      color: var(--bg-base);
+    }
 
-        .btn-start {
-            background: var(--primary);
-            color: white;
-            border: none;
-            font-weight: 600;
-            font-size: 1rem;
-            padding: 0.8rem 2.5rem;
-            border-radius: 8px;
-            transition: all 0.2s ease;
-        }
-        .btn-start:hover {
-            background: var(--primary-dark);
-            color: white;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(70, 172, 194, 0.3);
-        }
+    /* ── Progress bar ── */
+    .progress-label {
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-bottom: var(--space-2);
+      font-weight: 500;
+    }
 
-        /* ── Results screen ── */
-        .score-circle {
-            width: 110px;
-            height: 110px;
-            border-radius: 50%;
-            border: 4px solid var(--primary);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 1.5rem;
-            background: rgba(70, 172, 194, 0.06);
-        }
-        .score-number {
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--primary-dark);
-            line-height: 1;
-        }
-        .score-label {
-            font-size: 0.7rem;
-            color: var(--muted);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            font-weight: 500;
-        }
-        .review-card {
-            background: rgba(77, 71, 48, 0.04);
-            border: 1px solid rgba(77, 71, 48, 0.12);
-            border-radius: 10px;
-            padding: 1rem 1.25rem;
-            margin-bottom: 0.65rem;
-        }
-        .review-card .word {
-            font-weight: 700;
-            font-size: 0.95rem;
-            color: var(--text-dark);
-            margin-bottom: 0.2rem;
-        }
-        .review-card .correct-answer {
-            color: var(--success);
-            font-size: 0.875rem;
-            font-weight: 600;
-        }
-        .review-card .question-q {
-            font-size: 0.85rem;
-            color: var(--muted);
-            margin-bottom: 0.4rem;
-        }
+    .progress {
+      height: 4px;
+      border-radius: 2px;
+      margin-bottom: var(--space-6);
+      background: var(--border-subtle);
+    }
 
-        .btn-retake {
-            background: none;
-            border: 2px solid var(--primary);
-            color: var(--primary-dark);
-            font-weight: 600;
-            padding: 0.6rem 1.5rem;
-            border-radius: 8px;
-            margin-top: 1rem;
-            transition: all 0.2s ease;
-        }
-        .btn-retake:hover {
-            background: var(--primary);
-            color: white;
-            transform: translateY(-1px);
-        }
+    .progress-bar {
+      background: var(--accent);
+      border-radius: 2px;
+      transition: width 0.3s ease;
+    }
 
-        /* ── Error / loading states ── */
-        .state-message {
-            text-align: center;
-            padding: 3rem 1rem;
-            color: var(--muted);
-        }
-        .state-message i {
-            font-size: 2.5rem;
-            display: block;
-            margin-bottom: 0.75rem;
-        }
-    </style>
+    /* ── Question display ── */
+    .word-tag {
+      display: inline-block;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 500;
+      padding: 3px 10px;
+      border-radius: var(--radius-sm);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: var(--space-3);
+    }
+
+    .question-text {
+      font-size: 16px;
+      font-weight: 500;
+      margin-bottom: var(--space-5);
+      line-height: 1.5;
+      color: var(--text-primary);
+    }
+
+    /* ── Answer options ── */
+    .option {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 12px 16px;
+      margin-bottom: var(--space-2);
+      background: transparent;
+      border: 1px solid var(--border-muted);
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-family: var(--font-sans);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .option:hover {
+      border-color: var(--accent-border);
+      background: var(--accent-soft);
+    }
+
+    .option.selected {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    .option.correct {
+      border-color: var(--accent);
+      background: rgba(125, 211, 160, 0.06);
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    .option.incorrect {
+      border-color: rgba(176, 64, 64, 0.5);
+      background: rgba(176, 64, 64, 0.06);
+      color: #e8a5a5;
+    }
+
+    /* ── Next / submit button ── */
+    .btn-next {
+      background: var(--accent);
+      color: var(--bg-base);
+      border: none;
+      font-weight: 500;
+      font-size: 13px;
+      padding: 10px 20px;
+      border-radius: var(--radius-md);
+      margin-top: var(--space-4);
+      font-family: var(--font-sans);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .btn-next:hover:not(:disabled) {
+      background: #a0e2be;
+      color: var(--bg-base);
+    }
+
+    .btn-next:disabled {
+      background: var(--bg-surface-2);
+      color: var(--text-faint);
+      cursor: not-allowed;
+      opacity: 1;
+    }
+
+    /* ── Results screen ── */
+    .score-circle {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      border: 3px solid var(--accent);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto var(--space-5);
+      background: var(--accent-soft);
+    }
+
+    .score-number {
+      font-size: 28px;
+      font-weight: 500;
+      color: var(--accent);
+      line-height: 1;
+    }
+
+    .score-label {
+      font-size: 11px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 500;
+    }
+
+    /* ── Review cards (wrong answers) ── */
+    .review-card {
+      background: var(--bg-surface-2);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      margin-bottom: var(--space-3);
+    }
+
+    .review-card .word {
+      font-weight: 500;
+      font-size: 14px;
+      color: var(--text-primary);
+      margin-bottom: var(--space-1);
+    }
+
+    .review-card .question-q {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: var(--space-2);
+    }
+
+    .review-card .correct-answer {
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    /* ── Retake button ── */
+    .btn-retake {
+      background: transparent;
+      border: 1px solid var(--accent-border);
+      color: var(--accent);
+      font-weight: 500;
+      font-size: 13px;
+      padding: 10px 20px;
+      border-radius: var(--radius-md);
+      margin-top: var(--space-4);
+      font-family: var(--font-sans);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .btn-retake:hover {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    /* ── Error / loading states ── */
+    .state-message {
+      text-align: center;
+      padding: 48px var(--space-4);
+      color: var(--text-muted);
+    }
+
+    .state-message i {
+      font-size: 28px;
+      display: block;
+      margin-bottom: var(--space-3);
+      color: var(--text-dim);
+    }
+
+    .state-message p {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    /* ── Spinner in loading state ── */
+    .spinner-border {
+      color: var(--accent) !important;
+      width: 16px;
+      height: 16px;
+      border-width: 2px;
+    }
+
+    /* ── Inline styles from quiz.js that need dark overrides ──
+       quiz.js sets color:var(--muted) on some elements via inline styles.
+       We reassign --muted here so those inline styles pick up dark values. */
+    :root {
+      --muted: var(--text-dim);
+      --text-dark: var(--text-primary);
+      --success: var(--accent);
+    }
+  </style>
 </head>
+
 <body>
 
-    <!-- ══ Header — matches lecturer tool ══ -->
-    <header class="app-header">
-        <div class="container">
-            <h1>Exam Language Trainer</h1>
-            <p class="subtitle">Student Quiz Interface</p>
-        </div>
-    </header>
+  <div class="quiz-page">
 
-    <!-- ══ Quiz container ══ -->
-    <!--
-        quiz.js rewrites the innerHTML of .container dynamically.
-        The landing div below is the initial state — quiz.js replaces it
-        once the quiz loads from Firestore.
-        All subsequent screens (question, results) are also rendered by quiz.js.
-    -->
-    <div class="container" style="max-width: 680px;">
-        <div class="quiz-card">
-            <div class="landing text-center">
-                <div class="landing-icon"><i class="bi bi-book-half"></i></div>
-                <h2>Vocabulary Quiz</h2>
-                <p>Test your knowledge of key academic vocabulary<br>before your exam.</p>
-                <div class="d-flex align-items-center justify-content-center gap-2 mb-3">
-                    <div class="spinner-border spinner-border-sm" role="status" style="color:var(--primary);"></div>
-                    <span style="font-size:0.88rem; color:var(--muted);">
-                        Loading quiz…
-                    </span>
-                </div>
-                <!-- quiz.js replaces this button's event listener once loaded -->
-                <button class="btn-start start-btn" style="display:none;">
-                    <i class="bi bi-play-fill"></i> Start Quiz
-                </button>
-            </div>
-        </div>
+    <!-- Brand mark -->
+    <div style="width: 100%; max-width: 640px; margin-bottom: var(--space-4);">
+      <div class="quiz-brand">
+        <span class="quiz-brand-dot"></span>
+        <span class="quiz-brand-label">Exam trainer</span>
+      </div>
     </div>
 
-    <!-- Bootstrap 5 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Quiz logic — unchanged -->
-    <script type="module" src="js/quiz.js"></script>
+    <!-- Quiz container -->
+    <div class="quiz-card">
+      <div class="landing text-center">
+        <div class="landing-icon"><i class="bi bi-book-half"></i></div>
+        <h2>Vocabulary Quiz</h2>
+        <p>Test your knowledge of key academic vocabulary<br>before your exam.</p>
+        <div class="d-flex align-items-center justify-content-center gap-2 mb-3">
+          <div class="spinner-border" role="status"></div>
+          <span style="font-size:13px; color:var(--text-muted);">
+            Loading quiz…
+          </span>
+        </div>
+        <button class="btn-start start-btn" style="display:none;">
+          <i class="bi bi-play-fill"></i> Start Quiz
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bootstrap 5 JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Quiz logic — unchanged -->
+  <script type="module" src="js/quiz.js"></script>
 
 </body>
+
 </html>

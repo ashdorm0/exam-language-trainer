@@ -1,226 +1,391 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Exam Language Trainer — My Quizzes</title>
 
-    <!-- Google Font — DM Sans -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
-
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Our design tokens + layout -->
+    <link href="./css/styles.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <!-- QRCode.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <style>
-        :root {
-            --primary: #46ACC2;
-            --primary-dark: #3d97ab;
-            --primary-light: #42F2F7;
-            --accent: #498C8A;
-            --success: #2a9d6e;
-            --danger: #d94444;
-            --bg: #f5f8f8;
-            --surface: #ffffff;
-            --border: #d8e3e3;
-            --text: #4B6858;
-            --text-dark: #2d3d33;
-            --muted: #6b8076;
+        /* Page-specific styles — use tokens from styles.css */
+
+        .manage-page {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: var(--space-8) var(--space-6);
         }
 
-        * { box-sizing: border-box; }
-
-        body {
-            background: var(--bg);
-            color: var(--text);
-            font-family: 'DM Sans', sans-serif;
-            min-height: 100vh;
-            line-height: 1.6;
+        /* Top row: back link + user controls */
+        .manage-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: var(--space-8);
         }
 
-        .app-header {
-            background: linear-gradient(135deg, #498C8A 0%, #3d7a78 100%);
-            color: white;
-            padding: 1.1rem 0;
-            border-bottom: 3px solid var(--primary-light);
-        }
-        .app-header h1 {
-            font-size: 1.35rem;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-            margin: 0;
-        }
-        .app-header .subtitle {
-            font-size: 0.82rem;
-            opacity: 0.75;
-            margin: 0;
-            font-weight: 400;
+        .manage-back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2);
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.15s;
         }
 
+        .manage-back-link:hover {
+            color: var(--accent);
+        }
+
+        .manage-back-link .bi {
+            font-size: 15px;
+        }
+
+        .manage-user-info {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .manage-user-info .manage-signout-btn {
+            background: transparent;
+            border: 1px solid var(--border-muted);
+            color: var(--text-muted);
+            padding: 8px 12px;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            font-family: var(--font-sans);
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+        }
+
+        .manage-user-info .manage-signout-btn:hover {
+            background: var(--bg-surface);
+            color: var(--text-secondary);
+        }
+
+        /* Page heading */
+        .manage-heading-label {
+            font-size: 12px;
+            color: var(--accent);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-bottom: var(--space-2);
+            font-weight: 500;
+        }
+
+        .manage-heading-title {
+            font-size: 30px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin: 0 0 var(--space-6);
+            line-height: 1.2;
+        }
+
+        /* Loading state */
+        .manage-loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: var(--space-8);
+            color: var(--text-muted);
+            font-size: 14px;
+            gap: var(--space-3);
+        }
+
+        .manage-loading .spinner-border {
+            color: var(--accent) !important;
+            width: 16px;
+            height: 16px;
+            border-width: 2px;
+        }
+
+        /* Quiz cards */
         .quiz-item {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1.25rem 1.5rem;
-            margin-bottom: 0.85rem;
-            box-shadow: 0 1px 3px rgba(75, 104, 88, 0.06);
-            transition: all 0.2s ease;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            margin-bottom: var(--space-4);
+            transition: border-color 0.15s;
         }
+
         .quiz-item:hover {
-            box-shadow: 0 4px 16px rgba(75, 104, 88, 0.08);
+            border-color: var(--border-muted);
         }
 
         .quiz-title {
-            font-size: 1.02rem;
-            font-weight: 700;
-            color: var(--text-dark);
-            margin-bottom: 0.2rem;
+            font-size: 17px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: var(--space-2);
         }
+
         .quiz-meta {
-            font-size: 0.78rem;
-            color: var(--muted);
-            margin-bottom: 0.75rem;
-            font-weight: 400;
+            font-size: 13px;
+            color: var(--text-dim);
+            margin-bottom: var(--space-4);
         }
+
         .quiz-actions {
             display: flex;
-            gap: 0.5rem;
-            align-items: center;
+            gap: var(--space-2);
             flex-wrap: wrap;
         }
+
         .btn-action {
-            font-size: 0.8rem;
-            font-weight: 600;
-            padding: 0.4rem 0.85rem;
-            border-radius: 7px;
-            border: 1px solid var(--border);
-            background: #fafcfc;
-            color: var(--text);
+            background: transparent;
+            border: 1px solid var(--border-muted);
+            color: var(--text-secondary);
+            padding: 8px 14px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-family: var(--font-sans);
             cursor: pointer;
-            transition: all 0.15s;
-        }
-        .btn-action:hover {
-            background: rgba(66, 242, 247, 0.06);
-            border-color: var(--primary);
-            color: var(--primary-dark);
-        }
-        .btn-delete {
-            border-color: #f5c6c6;
-            color: var(--danger);
-        }
-        .btn-delete:hover {
-            background: #fef2f2;
-            border-color: var(--danger);
+            transition: background 0.15s, color 0.15s, border-color 0.15s;
         }
 
+        .btn-action:hover {
+            background: var(--bg-surface);
+            color: var(--text-secondary);
+            border-color: var(--border-muted);
+        }
+
+        .btn-action .bi {
+            margin-right: 6px;
+        }
+
+        .btn-delete {
+            border-color: rgba(176, 64, 64, 0.3);
+            color: #e8a5a5;
+        }
+
+        .btn-delete:hover {
+            background: rgba(176, 64, 64, 0.08);
+            color: #f0bcbc;
+            border-color: rgba(176, 64, 64, 0.5);
+        }
+
+        /* Share URL display (revealed via the share button) */
         .share-url {
-            font-family: 'DM Sans', monospace;
-            font-size: 0.82rem;
+            background: var(--accent-soft);
+            border: 1px solid var(--accent-border);
+            color: var(--accent);
+            padding: 12px 14px;
+            border-radius: var(--radius-sm);
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
             word-break: break-all;
-            color: var(--primary-dark);
-            background: rgba(70, 172, 194, 0.08);
-            padding: 0.55rem 0.8rem;
-            border-radius: 6px;
-            margin-top: 0.75rem;
-            border: 1px solid rgba(70, 172, 194, 0.15);
+            display: block;
+            margin-top: var(--space-3);
         }
+
         .qr-container {
-            margin-top: 0.75rem;
+            margin-top: var(--space-3);
+            display: inline-block;
+            background: white;
+            padding: 8px;
+            border-radius: var(--radius-sm);
         }
+
         .quiz-detail-panel {
             display: none;
-            margin-top: 0.75rem;
-            padding-top: 0.75rem;
-            border-top: 1px solid var(--border);
+            margin-top: var(--space-3);
+            padding-top: var(--space-3);
+            border-top: 1px solid var(--border-subtle);
         }
-        .quiz-detail-panel.open { display: block; }
 
+        .quiz-detail-panel.open {
+            display: block;
+        }
+
+        /* Empty state */
         .empty-state {
             text-align: center;
-            padding: 3rem 1rem;
-            color: var(--muted);
+            padding: 80px var(--space-4);
+            color: var(--text-muted);
         }
-        .empty-state i { font-size: 2.5rem; display: block; margin-bottom: 0.75rem; color: var(--primary); }
 
-        .nav-link-back {
-            font-size: 0.88rem;
-            color: var(--primary-dark);
+        .empty-state .bi {
+            font-size: 36px;
+            display: block;
+            margin-bottom: var(--space-3);
+            color: var(--text-dim);
+        }
+
+        .empty-state-title {
+            font-size: 18px;
+            color: var(--text-secondary);
+            margin-bottom: var(--space-2);
+        }
+
+        .empty-state-sub {
+            font-size: 14px;
+            color: var(--text-dim);
+        }
+
+        .empty-state p {
+            font-size: 15px;
+            color: var(--text-muted);
+            margin: 0 0 var(--space-4);
+            line-height: 1.6;
+        }
+
+        .empty-state .nav-link-back {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2);
+            color: var(--accent);
             text-decoration: none;
-            font-weight: 600;
-            transition: color 0.15s;
+            font-size: 14px;
+            padding: 10px 18px;
+            border: 1px solid var(--accent-border);
+            border-radius: var(--radius-md);
+            transition: background 0.15s;
         }
-        .nav-link-back:hover { text-decoration: underline; color: var(--accent); }
 
-        .d-none { display: none !important; }
+        .empty-state .nav-link-back .bi {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1em;
+            height: 1em;
+            line-height: 1;
+            margin-bottom: 0;
+            font-size: 14px;
+            color: currentColor;
+            vertical-align: middle;
+        }
 
-        /* ── Modal ── */
-        .modal-content {
-            border-radius: 14px;
-            border: 1px solid var(--border);
-            box-shadow: 0 20px 60px rgba(75, 104, 88, 0.15);
+        .empty-state .nav-link-back:hover {
+            background: var(--accent-soft);
         }
-        .modal-header {
-            border-bottom: 1px solid var(--border);
-            padding: 1rem 1.25rem;
+
+        /* ── Delete confirmation modal ── */
+        #deleteModal .modal-content {
+            background: var(--bg-sidebar);
+            border: 1px solid var(--border-muted);
+            border-radius: var(--radius-lg);
+            color: var(--text-secondary);
         }
-        .modal-footer {
-            border-top: 1px solid var(--border);
-            padding: 0.85rem 1.25rem;
+
+        #deleteModal .modal-header {
+            border-bottom: 1px solid var(--border-subtle);
+            padding: var(--space-4) var(--space-5);
         }
-        .modal-title {
-            font-weight: 700;
-            font-size: 1.05rem;
-            color: var(--text-dark);
+
+        #deleteModal .modal-title {
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        #deleteModal .modal-title .bi {
+            color: #e8a5a5;
+        }
+
+        #deleteModal .btn-close {
+            filter: invert(1) grayscale(100%) brightness(2);
+            opacity: 0.6;
+        }
+
+        #deleteModal .btn-close:hover {
+            opacity: 1;
+        }
+
+        #deleteModal .modal-body {
+            padding: var(--space-5);
+            color: var(--text-muted);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        #deleteModal #deleteQuizTitle {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        #deleteModal .modal-footer {
+            border-top: 1px solid var(--border-subtle);
+            padding: var(--space-4) var(--space-5);
+            gap: var(--space-3);
+        }
+
+        #deleteModal .btn-outline-secondary {
+            background: transparent !important;
+            border: 1px solid var(--border-muted) !important;
+            color: var(--text-muted) !important;
+            font-family: var(--font-sans) !important;
+            font-size: 13px !important;
+            font-weight: 400 !important;
+            padding: 10px 16px !important;
+            border-radius: var(--radius-md) !important;
+        }
+
+        #deleteModal .btn-outline-secondary:hover {
+            background: var(--bg-surface) !important;
+            color: var(--text-secondary) !important;
+        }
+
+        #deleteModal .btn-danger {
+            background: #b04040 !important;
+            border: none !important;
+            color: #f5f5f5 !important;
+            font-family: var(--font-sans) !important;
+            font-size: 13px !important;
+            font-weight: 500 !important;
+            padding: 10px 20px !important;
+            border-radius: var(--radius-md) !important;
+        }
+
+        #deleteModal .btn-danger:hover {
+            background: #c35050 !important;
         }
     </style>
 </head>
+
 <body>
 
-    <!-- ══ Header ══ -->
-    <header class="app-header">
-        <div class="container">
-            <div class="d-flex align-items-center justify-content-between">
-                <div>
-                    <h1><span class="header-lock"></span>Exam Language Trainer</h1>
-                    <p class="subtitle">Quiz Management</p>
-                </div>
-                <div id="userInfo" class="d-none" style="font-size:0.78rem; color:rgba(255,255,255,0.85);">
-                    <span id="userEmail"></span>
-                    <button class="btn btn-sm btn-outline-light ms-2" id="signOutBtn" style="font-size:0.7rem; padding:2px 10px; border-radius:5px;">
-                        Sign Out
-                    </button>
-                </div>
+    <div class="manage-page">
+
+        <!-- Top bar: back link + user controls -->
+        <div class="manage-topbar">
+            <a href="index.html" class="manage-back-link">
+                <i class="bi bi-arrow-left"></i> Back to quiz creator
+            </a>
+            <div id="userInfo" class="manage-user-info d-none">
+                <span id="userEmail"></span>
+                <button type="button" class="manage-signout-btn" id="signOutBtn">Sign out</button>
             </div>
         </div>
-    </header>
 
-    <!-- ══ Main Content ══ -->
-    <div class="container py-4" style="max-width:760px;">
-
-        <div class="d-flex align-items-center justify-content-between mb-4">
-            <a href="index.html" class="nav-link-back">
-                <i class="bi bi-arrow-left"></i> Back to Quiz Creator
-            </a>
-            <h2 style="font-size:1.15rem; font-weight:700; margin:0; color:var(--text-dark);">
-                My Quizzes
-            </h2>
+        <!-- Page heading -->
+        <div>
+            <div class="manage-heading-label">Library</div>
+            <h1 class="manage-heading-title">My quizzes</h1>
         </div>
 
         <!-- Loading spinner -->
-        <div class="d-flex align-items-center justify-content-center py-4" id="spinner-loading">
-            <div class="spinner-border spinner-border-sm" role="status" style="color:var(--primary);"></div>
-            <span style="font-size:0.9rem; color:var(--muted); margin-left:0.5rem;">
-                Loading your quizzes…
-            </span>
+        <div class="manage-loading" id="spinner-loading">
+            <div class="spinner-border" role="status"></div>
+            <span>Loading your quizzes…</span>
         </div>
 
         <!-- Quiz list rendered here by manage.js -->
         <div id="quizList"></div>
+
     </div>
 
     <!-- ══ Delete Confirmation Modal ══ -->
@@ -229,23 +394,21 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">
-                        <i class="bi bi-exclamation-triangle text-danger"></i>
-                        Delete Quiz
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Delete quiz
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body" style="font-size:0.9rem;">
+                <div class="modal-body">
                     Are you sure you want to delete "<span id="deleteQuizTitle"></span>"?
                     Students will no longer be able to access this quiz. This cannot be undone.
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"
-                            style="border-radius:8px; font-weight:500;">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
                         Cancel
                     </button>
-                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn"
-                            style="font-weight:600; border-radius:8px;">
-                        <i class="bi bi-trash"></i> Delete Quiz
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                        <i class="bi bi-trash"></i> Delete quiz
                     </button>
                 </div>
             </div>
@@ -257,4 +420,5 @@
     <script type="module" src="js/manage.js"></script>
 
 </body>
+
 </html>

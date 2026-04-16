@@ -124,17 +124,30 @@
 
                     <!-- ── STEP 1: Upload ── -->
                     <div id="section-upload">
-                        <div class="card">
-                            <div class="card-body p-4">
+                        <div class="upload-hero">
+                            <div class="upload-hero-copy">
+                                <div class="upload-hero-kicker">Step 1 of 4</div>
+                                <h1 class="upload-hero-title">Upload an exam paper</h1>
+                                <p class="upload-hero-subtitle">Drop a file or choose one from your computer. The
+                                    text stays in your browser until you extract vocabulary.</p>
 
-                                <div class="step-heading">
-                                    <div class="step-heading-label">Step 1 of 4</div>
-                                    <h1 class="step-heading-title">Upload an exam paper</h1>
-                                    <p class="step-heading-sub">The file is read inside your browser. It is never
-                                        uploaded to a server.</p>
+                                <div class="upload-hero-points">
+                                    <div class="upload-hero-point">
+                                        <i class="bi bi-file-earmark-text"></i>
+                                        <span>Supports .txt, .pdf, and .docx</span>
+                                    </div>
+                                    <div class="upload-hero-point">
+                                        <i class="bi bi-shield-lock-fill"></i>
+                                        <span>Processed locally in your browser</span>
+                                    </div>
+                                    <div class="upload-hero-point">
+                                        <i class="bi bi-lightning-charge-fill"></i>
+                                        <span>Fast vocabulary review workflow</span>
+                                    </div>
                                 </div>
+                            </div>
 
-                                <!-- Security notice -->
+                            <div class="upload-hero-panel">
                                 <div class="security-badge mb-4">
                                     <i class="bi bi-shield-lock-fill"></i>
                                     <strong>Your exam paper stays on your computer.</strong>
@@ -144,7 +157,7 @@
 
                                 <!-- Upload zone -->
                                 <div class="upload-zone mb-3" id="uploadZone">
-                                    <div class="icon"><i class="bi bi-file-earmark-text"></i></div>
+                                    <div class="icon"><i class="bi bi-cloud-arrow-up"></i></div>
                                     <p><strong>Click to choose a file</strong> or drag and drop here</p>
                                     <p style="margin-top:0.25rem; font-size:0.78rem;">Supported formats: .txt, .pdf,
                                         .docx</p>
@@ -155,7 +168,7 @@
                                 </div>
 
                                 <!-- Extract button -->
-                                <button class="btn btn-extract" id="extractBtn" disabled>
+                                <button class="btn btn-extract w-100" id="extractBtn" disabled>
                                     <i class="bi bi-cpu"></i> Extract Vocabulary
                                 </button>
 
@@ -279,17 +292,23 @@
                                 style="font-family:Arial,sans-serif; background:var(--primary); color:white;">
                                 <i class="bi bi-eye"></i> View Quiz
                             </a>
-                            <div style="margin-top:1.25rem;">
+                            <div class="qr-section" style="margin-top:1.25rem;">
                                 <p
                                     style="font-family:Arial,sans-serif; font-size:0.9rem; color:var(--muted); margin-bottom:0.5rem;">
                                     Or display this QR code for students to scan:
                                 </p>
                                 <div id="qrCode"></div>
-                                <button class="btn btn-sm mt-2" id="downloadQrBtn"
+                                <button class="btn btn-sm mt-2" id="downloadQrBtn" type="button"
                                     style="font-family:Arial,sans-serif; background:#e2e8f0;">
                                     <i class="bi bi-download"></i> Download QR code
                                 </button>
                             </div>
+                        </div>
+                        <div class="saved-action-row">
+                            <button class="btn btn-sm" id="startOverBtn" type="button"
+                                style="font-family:Arial,sans-serif; background:transparent; border:1px solid var(--border-muted); color:var(--text-secondary);">
+                                <i class="bi bi-arrow-counterclockwise"></i> Start over
+                            </button>
                         </div>
                     </div>
 

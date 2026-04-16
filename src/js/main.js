@@ -20,7 +20,7 @@ const DISPLAY_SIZE = 5 // Questions shown to lecturer at one time
 const POOL_SIZE = 30 // Max words shown to lecturer in confirmation modal
 
 /**
- * Common words list — loaded from libs/common_words.txt at startup.
+ * Common words list — loaded from the bundled easy-word lists at startup.
  */
 let COMMON_WORDS = new Set()
 
@@ -45,28 +45,35 @@ let sectionUpload, sectionQuiz, sectionSaved
 let poolInfo, questionsDisplay, saveSection, saveBtn
 let shareUrlEl, copyBtn
 let saveModal, quizTitleInput, confirmSaveBtn
+let viewQuizBtn, downloadQrBtn, startOverBtn
 let candidateWords = [] // Words ready to show in confirmation modal
 let selectedWords = new Set() // Words currently selected for sending to Claude
 // ── Initialisation ────────────────────────────────────────────────────────────
 
 async function loadCommonWords () {
   /**
-   * Fetches the common words list from the text file and populates
-   * the COMMON_WORDS Set.
+   * Fetches the bundled easy-word lists and merges them into a single set.
    */
   try {
-    const response = await fetch('../libs/common_words_ngsl.txt')
-    const text = await response.text()
-    COMMON_WORDS = new Set(
+    const [ngslResponse, basicResponse] = await Promise.all([
+      fetch('../libs/common_words_ngsl.txt'),
+      fetch('../libs/common_words_1200.txt')
+    ])
+
+    const parseWordList = text =>
       text
         .split('\n')
-        .map(w => w.trim().toLowerCase())
-        .filter(w => w.length > 0)
-    )
+        .map(word => word.trim().toLowerCase())
+        .filter(word => word.length > 0)
+
+    const ngslWords = parseWordList(await ngslResponse.text())
+    const basicWords = parseWordList(await basicResponse.text())
+
+    COMMON_WORDS = new Set([...ngslWords, ...basicWords])
     console.log(`Common words loaded: ${COMMON_WORDS.size} words`)
   } catch (error) {
     console.warn(
-      'Could not load common_words.txt — filtering will be limited.',
+      'Could not load common word lists — filtering will be limited.',
       error
     )
     // App continues to work without the list; some common words may slip through to the lecturer's review
@@ -94,6 +101,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   saveBtn = document.getElementById('saveBtn')
   shareUrlEl = document.getElementById('shareUrl')
   copyBtn = document.getElementById('copyBtn')
+  viewQuizBtn = document.getElementById('viewQuizBtn')
+  downloadQrBtn = document.getElementById('downloadQrBtn')
+  startOverBtn = document.getElementById('startOverBtn')
   // New listeners for the review page:
   document
     .getElementById('reviewContinueBtn')
@@ -128,6 +138,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     navigator.clipboard.writeText(shareUrlEl.textContent)
     copyBtn.innerHTML = '<i class="bi bi-check"></i> Copied!'
   })
+  startOverBtn.addEventListener('click', resetToBeginning)
 
   // ── Auth events ──
   document.getElementById('signInBtn').addEventListener('click', onSignIn)
@@ -400,37 +411,205 @@ async function extractTextFromDOCX (file) {
 }
 
 /**
- * extractVocabulary — the NLP pipeline
+ * extractVocabulary — ranks likely difficult vocabulary from the source text.
  */
 function extractVocabulary (text) {
   const doc = nlp(text)
+
+  const nouns = new Set(
+    doc
+      .nouns()
+      .out('array')
+      .map(normalizeWord)
+      .filter(Boolean)
+  )
+  const verbs = new Set(
+    doc
+      .verbs()
+      .out('array')
+      .map(normalizeWord)
+      .filter(Boolean)
+  )
+  const adjectives = new Set(
+    doc
+      .adjectives()
+      .out('array')
+      .map(normalizeWord)
+      .filter(Boolean)
+  )
+  const adverbs = new Set(
+    doc
+      .adverbs()
+      .out('array')
+      .map(normalizeWord)
+      .filter(Boolean)
+  )
+
   const allTerms = doc.not('#ProperNoun').terms().out('array')
+  const filteredTerms = removeStopwords(
+    allTerms.map(normalizeWord).filter(Boolean),
+    eng
+  )
 
-  const cleaned = allTerms
-    .map(word => word.toLowerCase().trim())
-    .filter(word => /^[a-z]+$/.test(word) && word.length >= 4)
+  const stats = new Map()
 
-  const withoutStopwords = removeStopwords(cleaned, eng)
+  for (const term of filteredTerms) {
+    if (!isCandidateWord(term)) continue
 
-  const filtered = withoutStopwords.filter(word => !COMMON_WORDS.has(word))
+    const entry = stats.get(term) || {
+      word: term,
+      frequency: 0,
+      firstSeen: stats.size,
+      posScore: 0
+    }
 
-  // Step 5: Count frequency
-  const freqMap = {}
-  for (const word of filtered) {
-    freqMap[word] = (freqMap[word] || 0) + 1
+    entry.frequency += 1
+    entry.posScore = Math.max(
+      entry.posScore,
+      getPartOfSpeechScore(term, nouns, verbs, adjectives, adverbs)
+    )
+
+    stats.set(term, entry)
   }
 
-  // Step 6: Unique words sorted by ascending frequency
-  // (rare in this document = more likely academic/difficult)
-  const unique = [...new Set(filtered)]
-  unique.sort((a, b) => freqMap[a] - freqMap[b])
+  const ranked = [...stats.values()]
+    .map(entry => ({
+      ...entry,
+      score: scoreDifficulty(entry)
+    }))
+    .filter(entry => entry.score > 0)
+    .sort(
+      (a, b) =>
+        b.score - a.score ||
+        b.frequency - a.frequency ||
+        a.firstSeen - b.firstSeen ||
+        a.word.localeCompare(b.word)
+    )
 
-  // Step 7: Take top POOL_SIZE
-  const result = unique.slice(0, POOL_SIZE)
+  // Keep the highest-value candidate words, not the merely rare ones.
+  const result = ranked.slice(0, POOL_SIZE).map(entry => entry.word)
+
   console.log(
-    `NLP extracted ${result.length} candidate words from ${unique.length} unique terms`
+    `NLP extracted ${result.length} candidate words from ${ranked.length} ranked terms`
   )
   return result
+}
+
+function normalizeWord (word) {
+  return word.toLowerCase().replace(/^[^a-z]+|[^a-z]+$/g, '').trim()
+}
+
+function isCandidateWord (word) {
+  if (!/^[a-z]+$/.test(word) || word.length < 4) return false
+  if (COMMON_WORDS.has(word)) return false
+  if (isMashedCompound(word)) return false
+  return true
+}
+
+function isMashedCompound (word) {
+  if (word.length < 8) return false
+
+  const parts = splitIntoKnownWords(word)
+  return parts !== null && parts.length >= 2
+}
+
+function splitIntoKnownWords (word) {
+  const memo = new Map()
+
+  function isKnownFragment (fragment) {
+    if (COMMON_WORDS.has(fragment)) return true
+    if (fragment.length > 4 && fragment.endsWith('s')) {
+      const singular = fragment.slice(0, -1)
+      if (COMMON_WORDS.has(singular)) return true
+    }
+    if (fragment.length > 5 && fragment.endsWith('es')) {
+      const singular = fragment.slice(0, -2)
+      if (COMMON_WORDS.has(singular)) return true
+    }
+    if (fragment.length > 5 && fragment.endsWith('ed')) {
+      const base = fragment.slice(0, -2)
+      if (COMMON_WORDS.has(base)) return true
+    }
+    if (fragment.length > 6 && fragment.endsWith('ing')) {
+      const base = fragment.slice(0, -3)
+      if (COMMON_WORDS.has(base)) return true
+    }
+    return false
+  }
+
+  function helper (index) {
+    if (index === word.length) return []
+    if (memo.has(index)) return memo.get(index)
+
+    for (let end = word.length; end > index; end--) {
+      const fragment = word.slice(index, end)
+      if (fragment.length < 3 || !isKnownFragment(fragment)) continue
+
+      const remainder = helper(end)
+      if (remainder) {
+        const result = [fragment, ...remainder]
+        memo.set(index, result)
+        return result
+      }
+    }
+
+    memo.set(index, null)
+    return null
+  }
+
+  return helper(0)
+}
+
+function getPartOfSpeechScore (word, nouns, verbs, adjectives, adverbs) {
+  if (adjectives.has(word)) return 1.2
+  if (verbs.has(word)) return 1.1
+  if (nouns.has(word)) return 0.9
+  if (adverbs.has(word)) return 0.8
+  return 0.4
+}
+
+function estimateSyllables (word) {
+  const cleaned = word.toLowerCase().replace(/[^a-z]/g, '')
+  if (!cleaned) return 0
+
+  let count = 0
+  let prevWasVowel = false
+  for (const char of cleaned) {
+    const isVowel = 'aeiouy'.includes(char)
+    if (isVowel && !prevWasVowel) count += 1
+    prevWasVowel = isVowel
+  }
+
+  if (cleaned.endsWith('e') && count > 1) count -= 1
+  return Math.max(1, count)
+}
+
+function hasAcademicSuffix (word) {
+  return /(?:tion|sion|ment|ness|ity|ism|ist|ive|ous|al|ary|ory|ence|ance|ship|hood|able|ible|ically|ology|graphy)$/i.test(
+    word
+  )
+}
+
+function scoreDifficulty (entry) {
+  const { word, frequency, posScore } = entry
+  const syllables = estimateSyllables(word)
+
+  let score = 0
+
+  // Short, common, and repeated terms should be filtered out first.
+  score += posScore
+
+  if (frequency === 1) score += 1.5
+  else if (frequency === 2) score += 0.75
+  else score -= Math.min(2, frequency - 2)
+
+  if (word.length >= 7) score += 0.75
+  if (word.length >= 9) score += 0.5
+  if (syllables >= 3) score += 1
+  if (syllables >= 4) score += 0.5
+  if (hasAcademicSuffix(word)) score += 1
+
+  return score
 }
 
 // ── Phase 2: Confirmation modal ───────────────────────────────────────────────
@@ -487,6 +666,7 @@ async function onConfirmAndGenerate () {
   // Show quiz section with spinner
   sectionQuiz.classList.remove('d-none')
   spinnerApi.classList.remove('d-none')
+  saveSection.classList.add('d-none')
   setStep(3)
 
   // Scroll to quiz section
@@ -553,8 +733,8 @@ async function onConfirmAndGenerate () {
             tryParseQuestions(rawText)
           }
         } catch (parseErr) {
-          // Ignore parse errors on incomplete chunks
-          if (parseErr.message !== 'Stream interrupted. Please try again.') {
+          // Ignore malformed chunks that are still being streamed.
+          if (parseErr instanceof SyntaxError) {
             continue
           }
           throw parseErr
@@ -564,6 +744,9 @@ async function onConfirmAndGenerate () {
 
     // Final parse attempt on complete response
     tryParseQuestions(rawText)
+    if (questionPool.length === 0) {
+      throw new Error('No quiz questions were returned. Please try again.')
+    }
     console.log(`Stream finished. Total questions: ${questionPool.length}`)
   } catch (error) {
     console.error('Generation error:', error)
@@ -574,6 +757,9 @@ async function onConfirmAndGenerate () {
             </div>`
   } finally {
     spinnerApi.classList.add('d-none')
+  }
+
+  if (questionPool.length > 0) {
     saveSection.classList.remove('d-none')
   }
 }
@@ -755,7 +941,6 @@ function buildQuestionCard (q, i) {
         <button class="btn-remove" data-index="${i}">
             <i class="bi bi-x"></i> Remove
         </button>
-        <div class="word-tag">${q.word}</div>
         <div class="question-num">Question ${i + 1}</div>
         <div class="question-text">${q.question}</div>
         <ul class="option-list">
@@ -827,7 +1012,7 @@ async function onConfirmSave () {
     document.getElementById('section-quiz').classList.add('d-none')
     sectionSaved.classList.remove('d-none')
     shareUrlEl.textContent = quizUrl
-    document.getElementById('viewQuizBtn').href = quizUrl
+    viewQuizBtn.href = quizUrl
     saveSection.classList.add('d-none')
     setStep(4)
 
@@ -844,14 +1029,14 @@ async function onConfirmSave () {
     })
 
     // Wire up QR download button
-    document.getElementById('downloadQrBtn').addEventListener('click', () => {
+    downloadQrBtn.onclick = () => {
       const canvas = qrContainer.querySelector('canvas')
       if (!canvas) return
       const link = document.createElement('a')
       link.download = 'quiz-qr-code.png'
       link.href = canvas.toDataURL('image/png')
       link.click()
-    })
+    }
 
     sectionSaved.scrollIntoView({ behavior: 'smooth' })
   } catch (error) {
@@ -860,6 +1045,40 @@ async function onConfirmSave () {
     saveBtn.disabled = false
     saveBtn.innerHTML = '<i class="bi bi-cloud-upload"></i> Approve & Save Quiz'
   }
+}
+
+function resetToBeginning () {
+  // Clear the current quiz state and return to the upload step.
+  candidateWords = []
+  selectedWords = new Set()
+  questionPool = []
+  displayedQuestions = []
+  nextPoolIndex = 0
+
+  fileInput.value = ''
+  fileNameSpan.textContent = ''
+  fileSelected.style.display = 'none'
+  uploadZone.style.borderColor = 'rgba(125, 211, 160, 0.25)'
+  extractBtn.disabled = true
+
+  spinnerExtract.classList.add('d-none')
+  spinnerApi.classList.add('d-none')
+  saveSection.classList.add('d-none')
+
+  document.getElementById('section-review').classList.add('d-none')
+  document.getElementById('section-quiz').classList.add('d-none')
+  document.getElementById('section-saved').classList.add('d-none')
+  document.getElementById('section-upload').classList.remove('d-none')
+
+  questionsDisplay.innerHTML = ''
+  document.getElementById('reviewChips').innerHTML = ''
+  document.getElementById('reviewExtracted').textContent = '0'
+  document.getElementById('reviewKeeping').textContent = '0'
+  document.getElementById('reviewRemoved').textContent = '0'
+  document.getElementById('reviewCountNote').textContent = ''
+
+  setStep(1)
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 // ── Step indicator helper ─────────────────────────────────────────────────────
