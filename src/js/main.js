@@ -44,8 +44,6 @@ let spinnerExtract, spinnerApi
 let sectionUpload, sectionQuiz, sectionSaved
 let poolInfo, questionsDisplay, saveSection, saveBtn
 let shareUrlEl, copyBtn
-let wordChipsEl, wordCountNote, confirmSendBtn
-let confirmModal
 let saveModal, quizTitleInput, confirmSaveBtn
 let candidateWords = [] // Words ready to show in confirmation modal
 let selectedWords = new Set() // Words currently selected for sending to Claude
@@ -96,10 +94,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   saveBtn = document.getElementById('saveBtn')
   shareUrlEl = document.getElementById('shareUrl')
   copyBtn = document.getElementById('copyBtn')
-  wordChipsEl = document.getElementById('wordChips')
-  wordCountNote = document.getElementById('wordCountNote')
-  confirmSendBtn = document.getElementById('confirmSendBtn')
-  confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'))
+  // New listeners for the review page:
+  document
+    .getElementById('reviewContinueBtn')
+    .addEventListener('click', onConfirmAndGenerate)
+  document.getElementById('reviewBackBtn').addEventListener('click', () => {
+    document.getElementById('section-review').classList.add('d-none')
+    document.getElementById('section-upload').classList.remove('d-none')
+    setStep(1)
+  })
   saveModal = new bootstrap.Modal(document.getElementById('saveModal'))
   quizTitleInput = document.getElementById('quizTitleInput')
   confirmSaveBtn = document.getElementById('confirmSaveBtn')
@@ -116,7 +119,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   )
   uploadZone.addEventListener('drop', onFileDrop)
   extractBtn.addEventListener('click', onExtract)
-  confirmSendBtn.addEventListener('click', onConfirmAndGenerate)
   saveBtn.addEventListener('click', onSave)
   quizTitleInput.addEventListener('input', () => {
     confirmSaveBtn.disabled = !quizTitleInput.value.trim()
@@ -368,13 +370,22 @@ async function extractTextFromPDF (file) {
 function updateSelectionUI () {
   const selectedCount = selectedWords.size
   const totalCount = candidateWords.length
+  const removedCount = totalCount - selectedCount
+
+  // Update stat cards
+  document.getElementById('reviewKeeping').textContent = selectedCount
+  document.getElementById('reviewRemoved').textContent = removedCount
+
+  // Get references
+  const note = document.getElementById('reviewCountNote')
+  const continueBtn = document.getElementById('reviewContinueBtn')
 
   if (selectedCount < 10) {
-    wordCountNote.textContent = `Keep at least 10 words selected to generate a quiz.`
-    confirmSendBtn.disabled = true
+    note.textContent = `Keep at least 10 words selected to generate a quiz.`
+    continueBtn.disabled = true
   } else {
-    wordCountNote.textContent = `${selectedCount} of ${totalCount} words selected. Click a word to exclude it. Only selected words will be sent to Claude.`
-    confirmSendBtn.disabled = false
+    note.textContent = `${selectedCount} of ${totalCount} words selected.`
+    continueBtn.disabled = false
   }
 }
 
@@ -430,13 +441,17 @@ function showConfirmationModal (words) {
   // Reset state: every word starts selected
   selectedWords = new Set(words)
 
-  // Render chips — each has data-word attribute so click handler knows which word it represents
-  wordChipsEl.innerHTML = words
+  // Update stat cards
+  document.getElementById('reviewExtracted').textContent = words.length
+
+  // Render chips into the review section
+  const reviewChipsEl = document.getElementById('reviewChips')
+  reviewChipsEl.innerHTML = words
     .map(w => `<span class="word-chip" data-word="${w}">${w}</span>`)
     .join('')
 
-  // Wire up click handlers on every chip
-  wordChipsEl.querySelectorAll('.word-chip').forEach(chip => {
+  // Wire up chip clicks
+  reviewChipsEl.querySelectorAll('.word-chip').forEach(chip => {
     chip.addEventListener('click', () => {
       const word = chip.dataset.word
       if (selectedWords.has(word)) {
@@ -447,12 +462,14 @@ function showConfirmationModal (words) {
         chip.classList.remove('deselected')
       }
       updateSelectionUI()
-      console.log(`Selected: ${selectedWords.size} / ${words.length}`)
     })
   })
 
+  // Swap sections: hide upload, show review
+  document.getElementById('section-upload').classList.add('d-none')
+  document.getElementById('section-review').classList.remove('d-none')
+
   setStep(2)
-  confirmModal.show()
   updateSelectionUI()
 }
 
@@ -467,7 +484,7 @@ function showConfirmationModal (words) {
  * sees questions appearing one by one instead of waiting 5-8 seconds.
  */
 async function onConfirmAndGenerate () {
-  confirmModal.hide()
+  document.getElementById('section-review').classList.add('d-none')
 
   // Show quiz section with spinner
   sectionQuiz.classList.remove('d-none')
@@ -809,6 +826,7 @@ async function onConfirmSave () {
     const quizUrl = `${window.location.origin}/quiz.html?id=${quizId}`
 
     // Show success
+    document.getElementById('section-quiz').classList.add('d-none')
     sectionSaved.classList.remove('d-none')
     shareUrlEl.textContent = quizUrl
     document.getElementById('viewQuizBtn').href = quizUrl

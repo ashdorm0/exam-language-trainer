@@ -1,3 +1,10 @@
+/* Force the dark canvas — the legacy inline styles still
+   set body bg to light. This wins via order (styles.css loads
+   before the inline block means it loses; we bump specificity
+   with html+body). */
+html body {
+  background: var(--bg-base);
+}
 :root {
     /* Background surfaces */
     --bg-base: #0a0a0b;
