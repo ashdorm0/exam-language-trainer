@@ -769,3 +769,142 @@ body {
     background: var(--bg-surface);
     color: var(--text-secondary);
 }
+
+/* ─────────────────────────────────────────────
+   Task 10 — Save Quiz modal (dark theme)
+   Scoped to #saveModal so we don't accidentally
+   affect any other Bootstrap modals in the future.
+   ───────────────────────────────────────────── */
+
+#saveModal .modal-content {
+  background: var(--bg-sidebar);
+  border: 1px solid var(--border-muted);
+  border-radius: var(--radius-lg);
+  color: var(--text-secondary);
+}
+
+#saveModal .modal-header {
+  border-bottom: 1px solid var(--border-subtle);
+  padding: var(--space-4) var(--space-5);
+}
+
+#saveModal .modal-title {
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+#saveModal .modal-title .bi {
+  color: var(--accent);
+}
+
+/* Bootstrap's close button uses a white SVG icon + dark mask by default;
+   `btn-close-white` variant is pre-built for dark backgrounds. We apply
+   the same invert filter here so we don't have to touch the HTML. */
+#saveModal .btn-close {
+  filter: invert(1) grayscale(100%) brightness(2);
+  opacity: 0.6;
+}
+
+#saveModal .btn-close:hover {
+  opacity: 1;
+}
+
+#saveModal .modal-body {
+  padding: var(--space-5);
+}
+
+#saveModal .form-label {
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: var(--space-2);
+}
+
+#saveModal .form-control {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-muted);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+}
+
+#saveModal .form-control:focus {
+  background: var(--bg-surface);
+  border-color: var(--accent-border);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+  color: var(--text-primary);
+  outline: none;
+}
+
+#saveModal .form-control::placeholder {
+  color: var(--text-faint);
+}
+
+#saveModal .form-text {
+  color: var(--text-dim);
+  font-size: 11px;
+  margin-top: var(--space-2);
+}
+
+#saveModal .modal-footer {
+  border-top: 1px solid var(--border-subtle);
+  padding: var(--space-4) var(--space-5);
+  gap: var(--space-3);
+}
+
+/* Cancel button — ghost style */
+#saveModal .btn-outline-secondary {
+  background: transparent;
+  border: 1px solid var(--border-muted);
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 400;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+}
+
+#saveModal .btn-outline-secondary:hover {
+  background: var(--bg-surface);
+  border-color: var(--border-muted);
+  color: var(--text-secondary);
+}
+
+/* Confirm save button — primary accent */
+#saveModal .btn-save {
+  background: var(--accent);
+  color: var(--bg-base);
+  border: none;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 12px;
+  padding: 8px 20px;
+  border-radius: var(--radius-md);
+}
+
+#saveModal .btn-save:hover:not(:disabled) {
+  background: #a0e2be;
+  color: var(--bg-base);
+}
+
+#saveModal .btn-save:disabled {
+  background: var(--bg-surface-2);
+  color: var(--text-faint);
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+#saveModal .btn-save .bi {
+  color: var(--bg-base);
+}
+
+/* Darken the backdrop slightly more than default for contrast */
+#saveModal + .modal-backdrop,
+.modal-backdrop.show {
+  opacity: 0.7;
+}
