@@ -434,8 +434,10 @@ body {
 .app-shell {
     display: grid;
     grid-template-columns: 220px 1fr;
-    min-height: calc(100vh - 80px);
-    /* 80px = header height, adjust if needed */
+    height: calc(100vh - 80px);
+    /* fixed height, not min-height */
+    overflow: hidden;
+    /* prevent double-scrollbars */
 }
 
 .app-sidebar {
@@ -444,6 +446,8 @@ body {
     padding: var(--space-5) 0;
     display: flex;
     flex-direction: column;
+    overflow-y: auto;
+    /* sidebar scrolls independently if its own content is tall */
 }
 
 .sidebar-brand {
@@ -496,6 +500,7 @@ body {
 .app-main {
     padding: var(--space-8) 48px;
     color: var(--text-secondary);
+    overflow-y: auto;
 }
 
 /* ─────────────────────────────────────────────
@@ -503,76 +508,76 @@ body {
    ───────────────────────────────────────────── */
 
 .sidebar-step {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: 10px var(--space-3);
-  background: transparent;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  text-align: left;
-  margin-bottom: 6px;
-  cursor: default;
-  transition: background 0.15s, border-color 0.15s;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: 10px var(--space-3);
+    background: transparent;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    text-align: left;
+    margin-bottom: 6px;
+    cursor: default;
+    transition: background 0.15s, border-color 0.15s;
 }
 
 .sidebar-step-num {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--text-dim);
-  font-size: 11px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-dim);
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
 }
 
 .sidebar-step-body {
-  flex: 1;
-  min-width: 0;
+    flex: 1;
+    min-width: 0;
 }
 
 .sidebar-step-title {
-  font-size: 13px;
-  color: var(--text-dim);
+    font-size: 13px;
+    color: var(--text-dim);
 }
 
 .sidebar-step-sub {
-  font-size: 10px;
-  color: var(--text-faint);
+    font-size: 10px;
+    color: var(--text-faint);
 }
 
 /* Active state — the step the user is currently on */
 .sidebar-step.active {
-  background: var(--accent-soft);
-  border-color: var(--accent-strong);
+    background: var(--accent-soft);
+    border-color: var(--accent-strong);
 }
 
 .sidebar-step.active .sidebar-step-num {
-  background: var(--accent);
-  color: var(--bg-base);
+    background: var(--accent);
+    color: var(--bg-base);
 }
 
 .sidebar-step.active .sidebar-step-title {
-  color: var(--text-secondary);
+    color: var(--text-secondary);
 }
 
 .sidebar-step.active .sidebar-step-sub {
-  color: var(--text-dim);
+    color: var(--text-dim);
 }
 
 /* Done state — steps the user has completed */
 .sidebar-step.done .sidebar-step-num {
-  background: var(--accent-soft);
-  color: var(--accent);
-  border: 1px solid var(--accent-border);
+    background: var(--accent-soft);
+    color: var(--accent);
+    border: 1px solid var(--accent-border);
 }
 
 .sidebar-step.done .sidebar-step-title {
-  color: var(--text-muted);
+    color: var(--text-muted);
 }
 
 /* ─────────────────────────────────────────────
@@ -583,155 +588,301 @@ body {
 
 /* Remove the Bootstrap .container padding inside app-main —
    our sidebar layout already handles horizontal spacing */
-.app-main > .container {
-  max-width: none;
-  padding: var(--space-8) 48px;
+.app-main>.container {
+    max-width: none;
+    padding: var(--space-8) 48px;
 }
 
 /* Kill the white card wrapper around the upload content */
 .app-main #section-upload .card {
-  background: transparent;
-  border: none;
-  box-shadow: none;
-  border-radius: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
 }
 
 .app-main #section-upload .card-body {
-  padding: 0 !important;
+    padding: 0 !important;
 }
 
 /* Step 1 heading block — we inject this above the security notice */
 .app-main .step-heading {
-  margin-bottom: var(--space-8);
+    margin-bottom: var(--space-8);
 }
 
 .app-main .step-heading-label {
-  font-size: 11px;
-  color: var(--accent);
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  margin-bottom: var(--space-2);
-  font-weight: 500;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: var(--space-2);
+    font-weight: 500;
 }
 
 .app-main .step-heading-title {
-  font-size: 24px;
-  font-weight: 500;
-  color: var(--text-primary);
-  margin: 0 0 var(--space-2);
+    font-size: 24px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin: 0 0 var(--space-2);
 }
 
 .app-main .step-heading-sub {
-  font-size: 13px;
-  color: var(--text-muted);
-  margin: 0;
+    font-size: 13px;
+    color: var(--text-muted);
+    margin: 0;
 }
 
 /* Security notice — low-key, not shouty */
 .app-main .security-badge {
-  background: transparent;
-  border: none;
-  border-left: 2px solid var(--accent-border);
-  border-radius: 0;
-  padding: var(--space-2) var(--space-4);
-  color: var(--text-muted);
-  font-size: 12px;
-  font-family: var(--font-sans);
-  margin-bottom: var(--space-6);
+    background: transparent;
+    border: none;
+    border-left: 2px solid var(--accent-border);
+    border-radius: 0;
+    padding: var(--space-2) var(--space-4);
+    color: var(--text-muted);
+    font-size: 12px;
+    font-family: var(--font-sans);
+    margin-bottom: var(--space-6);
 }
 
 .app-main .security-badge strong {
-  color: var(--text-secondary);
-  font-weight: 500;
+    color: var(--text-secondary);
+    font-weight: 500;
 }
 
 .app-main .security-badge .bi {
-  color: var(--accent);
+    color: var(--accent);
 }
 
 /* Upload zone — dashed green border, dark background */
 .app-main .upload-zone {
-  border: 1px dashed var(--accent-strong);
-  background: var(--accent-soft);
-  border-radius: var(--radius-lg);
-  padding: 48px 40px;
-  text-align: center;
-  transition: border-color 0.15s, background 0.15s;
+    border: 1px dashed var(--accent-strong);
+    background: var(--accent-soft);
+    border-radius: var(--radius-lg);
+    padding: 48px 40px;
+    text-align: center;
+    transition: border-color 0.15s, background 0.15s;
 }
 
 .app-main .upload-zone:hover,
 .app-main .upload-zone.dragover {
-  border-color: var(--accent);
-  background: rgba(125, 211, 160, 0.05);
+    border-color: var(--accent);
+    background: rgba(125, 211, 160, 0.05);
 }
 
 .app-main .upload-zone .icon {
-  font-size: 28px;
-  color: var(--accent);
-  margin-bottom: var(--space-4);
+    font-size: 28px;
+    color: var(--accent);
+    margin-bottom: var(--space-4);
 }
 
 .app-main .upload-zone p {
-  color: var(--text-secondary);
-  font-family: var(--font-sans);
-  font-size: 14px;
-  margin: 0;
+    color: var(--text-secondary);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    margin: 0;
 }
 
 .app-main .upload-zone p strong {
-  color: var(--text-primary);
-  font-weight: 500;
+    color: var(--text-primary);
+    font-weight: 500;
 }
 
-.app-main .upload-zone p + p {
-  color: var(--text-dim);
-  font-size: 12px;
-  margin-top: var(--space-2);
+.app-main .upload-zone p+p {
+    color: var(--text-dim);
+    font-size: 12px;
+    margin-top: var(--space-2);
 }
 
 /* File selected confirmation */
 .app-main .file-selected {
-  font-family: var(--font-sans);
-  font-size: 13px;
-  color: var(--accent);
-  margin-top: var(--space-3);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    color: var(--accent);
+    margin-top: var(--space-3);
 }
 
 /* Extract button — the primary action, green */
 .app-main .btn-extract {
-  background: var(--accent);
-  color: var(--bg-base);
-  border: none;
-  font-family: var(--font-sans);
-  font-weight: 500;
-  font-size: 13px;
-  padding: 10px 20px;
-  border-radius: var(--radius-md);
-  margin-top: var(--space-5);
-  transition: background 0.15s, opacity 0.15s;
+    background: var(--accent);
+    color: var(--bg-base);
+    border: none;
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 13px;
+    padding: 10px 20px;
+    border-radius: var(--radius-md);
+    margin-top: var(--space-5);
+    transition: background 0.15s, opacity 0.15s;
 }
 
 .app-main .btn-extract:hover:not(:disabled) {
-  background: #a0e2be;
-  color: var(--bg-base);
+    background: #a0e2be;
+    color: var(--bg-base);
 }
 
 .app-main .btn-extract:disabled {
-  background: var(--bg-surface-2);
-  color: var(--text-faint);
-  cursor: not-allowed;
-  opacity: 1;
+    background: var(--bg-surface-2);
+    color: var(--text-faint);
+    cursor: not-allowed;
+    opacity: 1;
 }
 
 /* Spinner text in dark theme */
 .app-main .spinner-text {
-  color: var(--text-muted);
-  font-size: 13px;
+    color: var(--text-muted);
+    font-size: 13px;
 }
 
 .app-main .spinner-border {
-  color: var(--accent) !important;
-  width: 16px;
-  height: 16px;
-  border-width: 2px;
+    color: var(--accent) !important;
+    width: 16px;
+    height: 16px;
+    border-width: 2px;
+}
+
+/* ─────────────────────────────────────────────
+   Task 5 — Step 2 (word review) full-page view
+   ───────────────────────────────────────────── */
+
+#section-review {
+    color: var(--text-secondary);
+}
+
+/* Stat cards row */
+.review-stats {
+    display: flex;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+}
+
+.review-stat {
+    flex: 1;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: var(--space-3) var(--space-4);
+}
+
+.review-stat-label {
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.review-stat-value {
+    font-size: 20px;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.review-stat-accent {
+    background: var(--accent-soft);
+    border-color: var(--accent-border);
+}
+
+.review-stat-accent .review-stat-label {
+    color: var(--accent);
+}
+
+.review-stat-accent .review-stat-value {
+    color: var(--accent);
+}
+
+/* Word chips grid */
+.review-chips {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: var(--space-5);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-content: flex-start;
+    min-height: 240px;
+    margin-bottom: var(--space-5);
+}
+
+/* Chips — override the legacy .word-chip styles */
+#section-review .word-chip {
+    display: inline-block;
+    padding: 6px 12px;
+    background: var(--accent-soft);
+    border: 1px solid var(--accent-border);
+    color: var(--accent);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+    font-family: var(--font-sans);
+    margin: 0;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+#section-review .word-chip.deselected {
+    background: transparent;
+    border: 1px solid var(--border-muted);
+    color: var(--text-faint);
+    text-decoration: line-through;
+    opacity: 1;
+}
+
+/* Footer row */
+.review-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+.review-footer-right {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+.review-footer-note {
+    font-size: 12px;
+    color: var(--text-dim);
+}
+
+/* Ghost / secondary button */
+.btn-ghost {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border-muted);
+    padding: 8px 16px;
+    border-radius: var(--radius-md);
+    font-size: 12px;
+    font-family: var(--font-sans);
+    cursor: pointer;
+}
+
+.btn-ghost:hover {
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+}
+
+/* Primary accent button */
+.btn-primary-accent {
+    background: var(--accent);
+    color: var(--bg-base);
+    border: none;
+    padding: 8px 20px;
+    border-radius: var(--radius-md);
+    font-size: 12px;
+    font-weight: 500;
+    font-family: var(--font-sans);
+    cursor: pointer;
+}
+
+.btn-primary-accent:hover:not(:disabled) {
+    background: #a0e2be;
+}
+
+.btn-primary-accent:disabled {
+    background: var(--bg-surface-2);
+    color: var(--text-faint);
+    cursor: not-allowed;
 }
