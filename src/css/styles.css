@@ -908,3 +908,131 @@ body {
 .modal-backdrop.show {
   opacity: 0.7;
 }
+
+/* ─────────────────────────────────────────────
+   Task 11 — Sign-in page (dark theme)
+   ───────────────────────────────────────────── */
+
+/* The wrapper gets centered in the viewport */
+#section-auth {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-5);
+  max-width: none !important; /* override the inline max-width:440px */
+}
+
+/* The card itself — dark panel */
+#section-auth .card {
+  background: var(--bg-sidebar);
+  border: 1px solid var(--border-muted);
+  border-radius: var(--radius-lg);
+  box-shadow: none;
+  width: 100%;
+  max-width: 400px;
+}
+
+#section-auth .card-body {
+  padding: var(--space-8) var(--space-6) !important;
+}
+
+/* Brand mark at the top of the sign-in card */
+#section-auth .card-body > .bi-person-lock {
+  color: var(--accent) !important;
+  font-size: 28px !important;
+  margin-bottom: var(--space-3);
+}
+
+#section-auth h2 {
+  color: var(--text-primary) !important;
+  font-family: var(--font-sans) !important;
+  font-size: 20px !important;
+  font-weight: 500 !important;
+  margin-bottom: var(--space-2) !important;
+}
+
+#section-auth .card-body > p {
+  color: var(--text-muted) !important;
+  font-family: var(--font-sans) !important;
+  font-size: 13px !important;
+}
+
+/* Form labels */
+#section-auth .form-label {
+  color: var(--text-secondary) !important;
+  font-family: var(--font-sans) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  margin-bottom: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+/* Input fields */
+#section-auth .form-control {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-muted);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+}
+
+#section-auth .form-control:focus {
+  background: var(--bg-surface);
+  border-color: var(--accent-border);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+  color: var(--text-primary);
+  outline: none;
+}
+
+#section-auth .form-control::placeholder {
+  color: var(--text-faint);
+}
+
+/* Error alert */
+#section-auth .alert-danger {
+  background: rgba(176, 64, 64, 0.08);
+  border: 1px solid rgba(176, 64, 64, 0.3);
+  color: #e8a5a5;
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  padding: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+/* Sign In button — primary accent */
+#section-auth .btn-extract {
+  background: var(--accent) !important;
+  color: var(--bg-base) !important;
+  border: none !important;
+  font-family: var(--font-sans) !important;
+  font-weight: 500 !important;
+  font-size: 13px !important;
+  padding: 10px 20px !important;
+  border-radius: var(--radius-md) !important;
+  margin-top: var(--space-4);
+}
+
+#section-auth .btn-extract:hover:not(:disabled) {
+  background: #a0e2be !important;
+  color: var(--bg-base) !important;
+}
+
+/* Create Account button — ghost style */
+#section-auth .btn-outline-secondary {
+  background: transparent !important;
+  color: var(--text-muted) !important;
+  border: 1px solid var(--border-muted) !important;
+  font-family: var(--font-sans) !important;
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  padding: 8px 16px !important;
+  border-radius: var(--radius-md) !important;
+}
+
+#section-auth .btn-outline-secondary:hover {
+  background: var(--bg-surface) !important;
+  color: var(--text-secondary) !important;
+}
