@@ -574,3 +574,164 @@ body {
 .sidebar-step.done .sidebar-step-title {
   color: var(--text-muted);
 }
+
+/* ─────────────────────────────────────────────
+   Task 4 — Step 1 (upload view) dark styling
+   Scoped to .app-main so these rules override
+   the legacy inline styles without !important
+   ───────────────────────────────────────────── */
+
+/* Remove the Bootstrap .container padding inside app-main —
+   our sidebar layout already handles horizontal spacing */
+.app-main > .container {
+  max-width: none;
+  padding: var(--space-8) 48px;
+}
+
+/* Kill the white card wrapper around the upload content */
+.app-main #section-upload .card {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+.app-main #section-upload .card-body {
+  padding: 0 !important;
+}
+
+/* Step 1 heading block — we inject this above the security notice */
+.app-main .step-heading {
+  margin-bottom: var(--space-8);
+}
+
+.app-main .step-heading-label {
+  font-size: 11px;
+  color: var(--accent);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: var(--space-2);
+  font-weight: 500;
+}
+
+.app-main .step-heading-title {
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0 0 var(--space-2);
+}
+
+.app-main .step-heading-sub {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* Security notice — low-key, not shouty */
+.app-main .security-badge {
+  background: transparent;
+  border: none;
+  border-left: 2px solid var(--accent-border);
+  border-radius: 0;
+  padding: var(--space-2) var(--space-4);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-family: var(--font-sans);
+  margin-bottom: var(--space-6);
+}
+
+.app-main .security-badge strong {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.app-main .security-badge .bi {
+  color: var(--accent);
+}
+
+/* Upload zone — dashed green border, dark background */
+.app-main .upload-zone {
+  border: 1px dashed var(--accent-strong);
+  background: var(--accent-soft);
+  border-radius: var(--radius-lg);
+  padding: 48px 40px;
+  text-align: center;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.app-main .upload-zone:hover,
+.app-main .upload-zone.dragover {
+  border-color: var(--accent);
+  background: rgba(125, 211, 160, 0.05);
+}
+
+.app-main .upload-zone .icon {
+  font-size: 28px;
+  color: var(--accent);
+  margin-bottom: var(--space-4);
+}
+
+.app-main .upload-zone p {
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  margin: 0;
+}
+
+.app-main .upload-zone p strong {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.app-main .upload-zone p + p {
+  color: var(--text-dim);
+  font-size: 12px;
+  margin-top: var(--space-2);
+}
+
+/* File selected confirmation */
+.app-main .file-selected {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--accent);
+  margin-top: var(--space-3);
+}
+
+/* Extract button — the primary action, green */
+.app-main .btn-extract {
+  background: var(--accent);
+  color: var(--bg-base);
+  border: none;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 13px;
+  padding: 10px 20px;
+  border-radius: var(--radius-md);
+  margin-top: var(--space-5);
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.app-main .btn-extract:hover:not(:disabled) {
+  background: #a0e2be;
+  color: var(--bg-base);
+}
+
+.app-main .btn-extract:disabled {
+  background: var(--bg-surface-2);
+  color: var(--text-faint);
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+/* Spinner text in dark theme */
+.app-main .spinner-text {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.app-main .spinner-border {
+  color: var(--accent) !important;
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+}
