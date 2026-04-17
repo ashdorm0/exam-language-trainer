@@ -67,7 +67,7 @@
                         <span class="sidebar-brand-dot"></span>
                         <span class="sidebar-brand-label">Exam trainer</span>
                     </div>
-                    <p class="sidebar-brand-note">Processed locally. Nothing leaves your browser.</p>
+                    <p class="sidebar-brand-note" id="sidebarBrandNote">Choose a mode to begin.</p>
                 </div>
                 <nav class="sidebar-nav">
                     <p class="sidebar-nav-heading">Workflow</p>
@@ -76,7 +76,7 @@
                         <span class="sidebar-step-num">1</span>
                         <div class="sidebar-step-body">
                             <div class="sidebar-step-title">Upload</div>
-                            <div class="sidebar-step-sub">Select exam paper</div>
+                            <div class="sidebar-step-sub" id="sidebarStep1Sub">Select document</div>
                         </div>
                     </div>
 
@@ -106,6 +106,10 @@
                 </nav>
                 <!-- User controls: shown when signed in -->
                 <div class="sidebar-footer" id="sidebarUserInfo">
+                    <button type="button" class="sidebar-footer-action" id="sidebarModePickerBtn">
+                        <i class="bi bi-arrow-repeat"></i>
+                        <span>Switch upload mode</span>
+                    </button>
                     <a href="manage.html" class="sidebar-footer-link">
                         <i class="bi bi-journal-text"></i>
                         <span>My quizzes</span>
@@ -122,13 +126,46 @@
             <main class="app-main">
                 <div class="container py-4">
 
+                    <!-- ── Mode Selection Landing ── -->
+                    <div id="section-mode">
+                        <div class="step-heading">
+                            <div class="step-heading-label">Before Step 1</div>
+                            <h1 class="step-heading-title">Choose your document mode</h1>
+                            <p class="step-heading-sub">Exam papers stay in the browser. Course material can be extracted on the server, then both follow the same review and quiz workflow.</p>
+                        </div>
+
+                        <div class="mode-grid">
+                            <button type="button" class="mode-card" id="modeExamBtn">
+                                <span class="mode-chip">Local</span>
+                                <h2>Exam Paper</h2>
+                                <p>Security-first extraction. The document stays on your computer and vocabulary is processed in-browser.</p>
+                                <ul>
+                                    <li><i class="bi bi-shield-lock-fill"></i> No exam upload to server</li>
+                                    <li><i class="bi bi-laptop"></i> Browser extraction for .txt, .pdf, .docx</li>
+                                    <li><i class="bi bi-arrow-right-circle"></i> Continue to shared review and quiz flow</li>
+                                </ul>
+                            </button>
+
+                            <button type="button" class="mode-card" id="modeCourseBtn">
+                                <span class="mode-chip mode-chip-server">Server</span>
+                                <h2>Course Material</h2>
+                                <p>Convenience-first extraction. Upload teaching material for server-side text and vocabulary extraction.</p>
+                                <ul>
+                                    <li><i class="bi bi-cloud-arrow-up-fill"></i> Server extraction for .txt, .pdf, .docx</li>
+                                    <li><i class="bi bi-collection"></i> Ideal for material already available online</li>
+                                    <li><i class="bi bi-arrow-right-circle"></i> Continue to shared review and quiz flow</li>
+                                </ul>
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- ── STEP 1: Upload ── -->
-                    <div id="section-upload">
+                    <div id="section-upload" class="d-none">
                         <div class="upload-hero">
                             <div class="upload-hero-copy">
                                 <div class="upload-hero-kicker">Step 1 of 4</div>
-                                <h1 class="upload-hero-title">Upload an exam paper</h1>
-                                <p class="upload-hero-subtitle">Drop a file or choose one from your computer. The
+                                <h1 class="upload-hero-title" id="uploadHeroTitle">Upload an exam paper</h1>
+                                <p class="upload-hero-subtitle" id="uploadHeroSubtitle">Drop a file or choose one from your computer. The
                                     text stays in your browser until you extract vocabulary.</p>
 
                                 <div class="upload-hero-points">
@@ -138,7 +175,7 @@
                                     </div>
                                     <div class="upload-hero-point">
                                         <i class="bi bi-shield-lock-fill"></i>
-                                        <span>Processed locally in your browser</span>
+                                        <span id="uploadModePoint">Processed locally in your browser</span>
                                     </div>
                                     <div class="upload-hero-point">
                                         <i class="bi bi-lightning-charge-fill"></i>
@@ -150,9 +187,8 @@
                             <div class="upload-hero-panel">
                                 <div class="security-badge mb-4">
                                     <i class="bi bi-shield-lock-fill"></i>
-                                    <strong>Your exam paper stays on your computer.</strong>
-                                    Vocabulary is extracted locally in your browser. Only word lists — never exam
-                                    content — are sent to the server.
+                                    <strong id="securityBadgeStrong">Your exam paper stays on your computer.</strong>
+                                    <span id="securityBadgeBody">Vocabulary is extracted locally in your browser. Only word lists — never exam content — are sent to the server.</span>
                                 </div>
 
                                 <!-- Upload zone -->
@@ -169,13 +205,13 @@
 
                                 <!-- Extract button -->
                                 <button class="btn btn-extract w-100" id="extractBtn" disabled>
-                                    <i class="bi bi-cpu"></i> Extract Vocabulary
+                                    <i class="bi bi-cpu"></i> <span id="extractBtnLabel">Extract Vocabulary</span>
                                 </button>
 
                                 <!-- Spinner -->
                                 <div class="d-flex align-items-center mt-3 d-none" id="spinner-extract">
                                     <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
-                                    <span class="spinner-text">Extracting vocabulary locally…</span>
+                                    <span class="spinner-text" id="extractSpinnerText">Extracting vocabulary locally…</span>
                                 </div>
                             </div>
                         </div>

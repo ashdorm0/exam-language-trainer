@@ -332,6 +332,93 @@ body {
     padding: 4px;
 }
 
+#section-mode {
+    background:
+        radial-gradient(circle at top left, rgba(125, 211, 160, 0.10), transparent 38%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+    border: 1px solid var(--border-subtle);
+    border-radius: 28px;
+    padding: 40px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+    margin-bottom: var(--space-6);
+}
+
+.mode-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.mode-card {
+    text-align: left;
+    border: 1px solid var(--border-subtle);
+    background: var(--bg-surface);
+    border-radius: 20px;
+    padding: 24px;
+    color: var(--text-secondary);
+    transition: border-color 0.15s ease, transform 0.15s ease, background 0.15s ease;
+}
+
+.mode-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent-border);
+    background: rgba(125, 211, 160, 0.08);
+}
+
+.mode-card h2 {
+    font-size: 24px;
+    color: var(--text-primary);
+    margin: 12px 0;
+}
+
+.mode-card p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 15px;
+    line-height: 1.65;
+}
+
+.mode-card ul {
+    margin: 18px 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 10px;
+}
+
+.mode-card li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.mode-card li .bi {
+    color: var(--accent);
+    font-size: 14px;
+}
+
+.mode-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--accent-border);
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.mode-chip-server {
+    border-color: var(--border-muted);
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-muted);
+}
+
 /* Shared workflow shell for the other steps so they echo the upload hero */
 #section-review,
 #section-quiz,
@@ -952,6 +1039,35 @@ body {
     border-top: 1px solid var(--border-subtle);
 }
 
+.sidebar-footer-action {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    background: transparent;
+    border: 1px solid var(--border-muted);
+    color: var(--text-muted);
+    text-align: left;
+    font-size: 13px;
+    font-family: var(--font-sans);
+    padding: 7px 10px;
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--space-3);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.sidebar-footer-action .bi {
+    color: var(--accent);
+    font-size: 14px;
+}
+
+.sidebar-footer-action:hover {
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+    border-color: var(--accent-border);
+}
+
 .sidebar-footer-link {
     display: flex;
     align-items: center;
@@ -1072,6 +1188,29 @@ body {
         border-radius: 20px;
     }
 
+    #section-mode {
+        padding: 24px;
+        border-radius: 20px;
+    }
+
+    .mode-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .mode-card {
+        border-radius: 14px;
+        padding: 18px;
+    }
+
+    .mode-card h2 {
+        font-size: 20px;
+    }
+
+    .mode-card p {
+        font-size: 14px;
+    }
+
     .upload-hero-title {
         font-size: 28px;
         max-width: none;
@@ -1186,6 +1325,23 @@ body {
         padding: 18px;
         gap: 16px;
         border-radius: 18px;
+    }
+
+    #section-mode {
+        padding: 18px;
+        border-radius: 18px;
+    }
+
+    .mode-card {
+        padding: 14px;
+    }
+
+    .mode-card h2 {
+        font-size: 18px;
+    }
+
+    .mode-card li {
+        align-items: flex-start;
     }
 
     .upload-hero-kicker {

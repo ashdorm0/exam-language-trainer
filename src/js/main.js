@@ -14,10 +14,27 @@ import {
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
-const API_BASE =
+const CLOUD_API_BASE =
   'https://us-central1-exam-language-trainer-3abec.cloudfunctions.net/api'
+const LOCAL_API_BASE =
+  'http://127.0.0.1:5001/exam-language-trainer-3abec/us-central1/api'
+
+function resolveApiBase () {
+  const stored = window.localStorage.getItem('eltApiBase')
+  if (stored && stored.trim()) return stored.trim()
+
+  const isLocalHost =
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1'
+
+  return isLocalHost ? LOCAL_API_BASE : CLOUD_API_BASE
+}
+
+const API_BASE = resolveApiBase()
+const COURSE_EXTRACT_ENDPOINT = `${API_BASE}/extract-course-vocabulary`
 const DISPLAY_SIZE = 5 // Questions shown to lecturer at one time
 const POOL_SIZE = 30 // Max words shown to lecturer in confirmation modal
+const MIN_REVIEW_WORDS = 15 // Minimum target words before fallback backfill
 
 /**
  * Common words list — loaded from the bundled easy-word lists at startup.
@@ -35,17 +52,25 @@ let questionPool = []
 let displayedQuestions = []
 let nextPoolIndex = 0
 let currentUser = null // Firebase Auth user object
+let processingMode = null // exam-local | course-server
 
 // ── DOM references (populated after DOMContentLoaded) ─────────────────────────
 
 let fileInput, uploadZone, fileSelected, fileNameSpan
 let extractBtn
 let spinnerExtract, spinnerApi
-let sectionUpload, sectionQuiz, sectionSaved
+let sectionMode, sectionUpload, sectionQuiz, sectionSaved
 let poolInfo, questionsDisplay, saveSection, saveBtn
 let shareUrlEl, copyBtn
 let saveModal, quizTitleInput, confirmSaveBtn
 let viewQuizBtn, downloadQrBtn, startOverBtn
+let modeExamBtn, modeCourseBtn
+let sidebarModePickerBtn
+let sidebarBrandNote
+let sidebarStep1Sub
+let uploadHeroTitle, uploadHeroSubtitle, uploadModePoint
+let securityBadgeStrong, securityBadgeBody
+let extractBtnLabel, extractSpinnerText
 let candidateWords = [] // Words ready to show in confirmation modal
 let selectedWords = new Set() // Words currently selected for sending to Claude
 // ── Initialisation ────────────────────────────────────────────────────────────
@@ -92,6 +117,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   extractBtn = document.getElementById('extractBtn')
   spinnerExtract = document.getElementById('spinner-extract')
   spinnerApi = document.getElementById('spinner-api')
+  sectionMode = document.getElementById('section-mode')
   sectionUpload = document.getElementById('section-upload')
   sectionQuiz = document.getElementById('section-quiz')
   sectionSaved = document.getElementById('section-saved')
@@ -116,6 +142,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   saveModal = new bootstrap.Modal(document.getElementById('saveModal'))
   quizTitleInput = document.getElementById('quizTitleInput')
   confirmSaveBtn = document.getElementById('confirmSaveBtn')
+  modeExamBtn = document.getElementById('modeExamBtn')
+  modeCourseBtn = document.getElementById('modeCourseBtn')
+  sidebarModePickerBtn = document.getElementById('sidebarModePickerBtn')
+  sidebarBrandNote = document.getElementById('sidebarBrandNote')
+  sidebarStep1Sub = document.getElementById('sidebarStep1Sub')
+  uploadHeroTitle = document.getElementById('uploadHeroTitle')
+  uploadHeroSubtitle = document.getElementById('uploadHeroSubtitle')
+  uploadModePoint = document.getElementById('uploadModePoint')
+  securityBadgeStrong = document.getElementById('securityBadgeStrong')
+  securityBadgeBody = document.getElementById('securityBadgeBody')
+  extractBtnLabel = document.getElementById('extractBtnLabel')
+  extractSpinnerText = document.getElementById('extractSpinnerText')
 
   // Wire up events
   uploadZone.addEventListener('click', () => fileInput.click())
@@ -129,6 +167,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   )
   uploadZone.addEventListener('drop', onFileDrop)
   extractBtn.addEventListener('click', onExtract)
+  modeExamBtn.addEventListener('click', () => onModeSelected('exam-local'))
+  modeCourseBtn.addEventListener('click', () => onModeSelected('course-server'))
+  sidebarModePickerBtn.addEventListener('click', resetToBeginning)
   saveBtn.addEventListener('click', onSave)
   quizTitleInput.addEventListener('input', () => {
     confirmSaveBtn.disabled = !quizTitleInput.value.trim()
@@ -157,6 +198,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       authSection.classList.add('d-none')
       toolSection.classList.remove('d-none')
       sidebarUserEmail.textContent = user.email
+      showModeSelection()
     } else {
       // Logged out — show sign-in, hide lecturer tool
       authSection.classList.remove('d-none')
@@ -281,10 +323,90 @@ function setFile (file) {
   checkExtractReady()
 }
 
+function getModeCopy (mode) {
+  if (mode === 'course-server') {
+    return {
+      sidebar: 'Course mode selected. Extraction runs on the server.',
+      title: 'Upload course material',
+      subtitle:
+        'Drop a file or choose one from your computer. The file is uploaded for server-side text and vocabulary extraction.',
+      point: 'Processed on the server after upload',
+      step1Sub: 'Upload course material',
+      securityStrong: 'Course material can be uploaded for extraction.',
+      securityBody:
+        'Use this for teaching material where strict exam confidentiality is not required. After extraction, the workflow is identical.',
+      extractBtn: 'Extract Vocabulary on Server',
+      extractSpinner: 'Uploading and extracting vocabulary on server...'
+    }
+  }
+
+  return {
+    sidebar: 'Exam mode selected. Processing stays in your browser.',
+    title: 'Upload an exam paper',
+    subtitle:
+      'Drop a file or choose one from your computer. The text stays in your browser until you extract vocabulary.',
+    point: 'Processed locally in your browser',
+    step1Sub: 'Select exam paper',
+    securityStrong: 'Your exam paper stays on your computer.',
+    securityBody:
+      'Vocabulary is extracted locally in your browser. Only word lists - never exam content - are sent to the server.',
+    extractBtn: 'Extract Vocabulary',
+    extractSpinner: 'Extracting vocabulary locally...'
+  }
+}
+
+function applyModeCopy (mode) {
+  const copy = getModeCopy(mode)
+  sidebarBrandNote.textContent = copy.sidebar
+  uploadHeroTitle.textContent = copy.title
+  uploadHeroSubtitle.textContent = copy.subtitle
+  uploadModePoint.textContent = copy.point
+  sidebarStep1Sub.textContent = copy.step1Sub
+  securityBadgeStrong.textContent = copy.securityStrong
+  securityBadgeBody.textContent = copy.securityBody
+  extractBtnLabel.textContent = copy.extractBtn
+  extractSpinnerText.textContent = copy.extractSpinner
+}
+
+function clearSelectedFile () {
+  fileInput.value = ''
+  fileNameSpan.textContent = ''
+  fileSelected.style.display = 'none'
+  uploadZone.style.borderColor = 'rgba(125, 211, 160, 0.25)'
+}
+
+function onModeSelected (mode) {
+  processingMode = mode
+  applyModeCopy(mode)
+  clearSelectedFile()
+  checkExtractReady()
+
+  sectionMode.classList.add('d-none')
+  sectionUpload.classList.remove('d-none')
+  sectionQuiz.classList.add('d-none')
+  sectionSaved.classList.add('d-none')
+  document.getElementById('section-review').classList.add('d-none')
+
+  setStep(1)
+}
+
+function showModeSelection () {
+  processingMode = null
+  sectionMode.classList.remove('d-none')
+  sectionUpload.classList.add('d-none')
+  sectionQuiz.classList.add('d-none')
+  sectionSaved.classList.add('d-none')
+  document.getElementById('section-review').classList.add('d-none')
+  clearSelectedFile()
+  checkExtractReady()
+  sidebarBrandNote.textContent = 'Choose a mode to begin.'
+  setStep(0)
+}
+
 /** Enable the Extract button only when both file and subject are provided */
 function checkExtractReady () {
   const hasFile = fileInput.files && fileInput.files[0]
-  extractBtn.disabled = !hasFile
+  extractBtn.disabled = !hasFile || !processingMode
 }
 
 // ── Phase 1: Client-side NLP extraction ──────────────────────────────────────
@@ -296,26 +418,21 @@ function checkExtractReady () {
 async function onExtract () {
   const file = fileInput.files[0]
 
+  if (!processingMode) {
+    alert('Choose Exam Paper or Course Material mode before extracting.')
+    return
+  }
+
   // Show spinner
   spinnerExtract.classList.remove('d-none')
   extractBtn.disabled = true
 
   try {
-    let text
-
-    if (file.name.toLowerCase().endsWith('.pdf')) {
-      // PDF path — use PDF.js to extract text client-side
-      text = await extractTextFromPDF(file)
-    } else if (file.name.toLowerCase().endsWith('.docx')) {
-      // DOCX path — use Mammoth.js to extract text client-side
-      text = await extractTextFromDOCX(file)
+    if (processingMode === 'course-server') {
+      candidateWords = await extractCandidateWordsOnServer(file)
     } else {
-      // Plain text path — use FileReader as before
-      text = await readFileAsText(file)
+      candidateWords = await extractCandidateWordsLocally(file)
     }
-
-    candidateWords = extractVocabulary(text)
-    spinnerExtract.classList.add('d-none')
 
     if (candidateWords.length === 0) {
       alert(
@@ -329,9 +446,86 @@ async function onExtract () {
     showConfirmationModal(candidateWords)
   } catch (error) {
     console.error('Extraction error:', error)
+    const modeError =
+      processingMode === 'course-server'
+        ? error.message ||
+          'Failed to extract vocabulary on the server. Please try another file.'
+        : 'Failed to extract text from file. Please try another file.'
+    alert(modeError)
+  } finally {
     spinnerExtract.classList.add('d-none')
-    alert('Failed to extract text from file. Please try another file.')
-    extractBtn.disabled = false
+    checkExtractReady()
+  }
+}
+
+async function extractCandidateWordsLocally (file) {
+  let text
+
+  if (file.name.toLowerCase().endsWith('.pdf')) {
+    // PDF path — use PDF.js to extract text client-side
+    text = await extractTextFromPDF(file)
+  } else if (file.name.toLowerCase().endsWith('.docx')) {
+    // DOCX path — use Mammoth.js to extract text client-side
+    text = await extractTextFromDOCX(file)
+  } else {
+    // Plain text path — use FileReader as before
+    text = await readFileAsText(file)
+  }
+
+  return extractVocabulary(text)
+}
+
+async function extractCandidateWordsOnServer (file) {
+  const filePayload = await fileToBase64Payload(file)
+
+  const response = await fetch(COURSE_EXTRACT_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(filePayload)
+  })
+
+  if (!response.ok) {
+    let errorMessage = 'Server extraction failed.'
+    try {
+      const payload = await response.json()
+      if (payload.error) errorMessage = payload.error
+    } catch {
+      try {
+        const text = await response.text()
+        if (text) errorMessage = text.slice(0, 220)
+      } catch {
+        // Keep fallback error message when response body cannot be read.
+      }
+    }
+    throw new Error(
+      `Server extraction failed (${response.status}): ${errorMessage}`
+    )
+  }
+
+  const payload = await response.json()
+  if (!payload.words || !Array.isArray(payload.words)) {
+    throw new Error('Invalid server response while extracting vocabulary.')
+  }
+
+  return payload.words
+}
+
+async function fileToBase64Payload (file) {
+  const arrayBuffer = await file.arrayBuffer()
+  const bytes = new Uint8Array(arrayBuffer)
+  let binary = ''
+
+  const chunkSize = 0x8000
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize))
+  }
+
+  return {
+    fileName: file.name,
+    mimeType: file.type || 'application/octet-stream',
+    data: btoa(binary)
   }
 }
 
@@ -506,8 +700,31 @@ function extractVocabulary (text) {
   // Keep the highest-value candidate words, not the merely rare ones.
   const result = ranked.slice(0, POOL_SIZE).map(entry => entry.word)
 
+  if (result.length < MIN_REVIEW_WORDS) {
+    const selected = new Set(result)
+    const relaxed = [...stats.values()]
+      .map(entry => ({
+        ...entry,
+        score: scoreDifficultyRelaxed(entry)
+      }))
+      .filter(entry => entry.score > 0 && !selected.has(entry.word))
+      .sort(
+        (a, b) =>
+          b.score - a.score ||
+          b.frequency - a.frequency ||
+          a.firstSeen - b.firstSeen ||
+          a.word.localeCompare(b.word)
+      )
+
+    for (const entry of relaxed) {
+      result.push(entry.word)
+      selected.add(entry.word)
+      if (result.length >= POOL_SIZE) break
+    }
+  }
+
   console.log(
-    `NLP extracted ${result.length} candidate words from ${ranked.length} ranked terms`
+    `NLP extracted ${result.length} candidate words from ${ranked.length} strict-ranked terms`
   )
   return result
 }
@@ -583,6 +800,8 @@ function isCandidateWord (word, dateTerms = new Set()) {
   const baseForms = getBaseForms(word)
   if (baseForms.some(form => COMMON_WORDS.has(form))) return false
   if (isMashedCompound(word)) return false
+  if (isLikelyCompoundArtifact(word)) return false
+  if (isLikelyIdentifierArtifact(word)) return false
   return true
 }
 
@@ -591,6 +810,47 @@ function isMashedCompound (word) {
 
   const parts = splitIntoKnownWords(word)
   return parts !== null && parts.length >= 2
+}
+
+function isLikelyCompoundArtifact (word) {
+  if (word.length < 11) return false
+
+  for (let splitIndex = 4; splitIndex <= word.length - 4; splitIndex++) {
+    const prefix = word.slice(0, splitIndex)
+    const suffix = word.slice(splitIndex)
+
+    if (!COMMON_WORDS.has(prefix) || suffix.length < 4) continue
+    if (COMMON_WORDS.has(suffix)) continue
+
+    if (nlp(suffix).found) return true
+  }
+
+  for (let splitIndex = 4; splitIndex <= word.length - 2; splitIndex++) {
+    const prefix = word.slice(0, splitIndex)
+    const suffix = word.slice(splitIndex)
+
+    if (COMMON_WORDS.has(prefix) && suffix.length <= 3) return true
+  }
+
+  return false
+}
+
+function isLikelyIdentifierArtifact (word) {
+  if (word.length < 6) return false
+
+  const suffixPattern =
+    /(id|uid|uuid|utc|xml|json|http|https|api|sql|dto|dao|repo|svc|datetime|timestamp)$/
+  if (suffixPattern.test(word)) return true
+
+  const techPattern = /(utc|json|xml|http|https|api|sql|dto|dao|repo|svc|datetime|timestamp)/g
+  const matches = word.match(techPattern)
+  if (matches && matches.length >= 1 && word.length >= 9) return true
+
+  if (/^[a-z]+(?:day|date|time|routine)$/.test(word) && word.length >= 12) {
+    return true
+  }
+
+  return false
 }
 
 function splitIntoKnownWords (word) {
@@ -686,6 +946,15 @@ function scoreDifficulty (entry) {
   // Short, common, and repeated terms should be filtered out first.
   score += posScore
 
+  if (posScore <= 0.9) score -= 0.75
+  if (/(?:ing|ed)$/.test(word) && !hasAcademicSuffix(word) && !/related$/.test(word)) {
+    score -= 0.75
+  }
+
+  if (posScore <= 0.9 && !hasAcademicSuffix(word) && !/related$/.test(word)) {
+    return -1
+  }
+
   if (frequency === 1) score += 1.5
   else if (frequency === 2) score += 0.75
   else score -= Math.min(2, frequency - 2)
@@ -695,6 +964,30 @@ function scoreDifficulty (entry) {
   if (syllables >= 3) score += 1
   if (syllables >= 4) score += 0.5
   if (hasAcademicSuffix(word)) score += 1
+
+  return score
+}
+
+function scoreDifficultyRelaxed (entry) {
+  const { word, frequency, posScore } = entry
+  const syllables = estimateSyllables(word)
+
+  let score = 0
+  score += Math.max(0.35, posScore)
+
+  if (frequency === 1) score += 1.2
+  else if (frequency === 2) score += 0.5
+  else score -= Math.min(1.5, frequency - 2)
+
+  if (word.length >= 7) score += 0.65
+  if (word.length >= 9) score += 0.4
+  if (syllables >= 3) score += 0.8
+  if (syllables >= 4) score += 0.4
+  if (hasAcademicSuffix(word)) score += 0.8
+
+  if (/(?:ing|ed)$/.test(word) && !hasAcademicSuffix(word) && !/related$/.test(word)) {
+    score -= 0.35
+  }
 
   return score
 }
@@ -1142,10 +1435,7 @@ function resetToBeginning () {
   displayedQuestions = []
   nextPoolIndex = 0
 
-  fileInput.value = ''
-  fileNameSpan.textContent = ''
-  fileSelected.style.display = 'none'
-  uploadZone.style.borderColor = 'rgba(125, 211, 160, 0.25)'
+  clearSelectedFile()
   extractBtn.disabled = true
 
   spinnerExtract.classList.add('d-none')
@@ -1155,7 +1445,11 @@ function resetToBeginning () {
   document.getElementById('section-review').classList.add('d-none')
   document.getElementById('section-quiz').classList.add('d-none')
   document.getElementById('section-saved').classList.add('d-none')
-  document.getElementById('section-upload').classList.remove('d-none')
+  document.getElementById('section-upload').classList.add('d-none')
+  document.getElementById('section-mode').classList.remove('d-none')
+
+  processingMode = null
+  sidebarBrandNote.textContent = 'Choose a mode to begin.'
 
   questionsDisplay.innerHTML = ''
   document.getElementById('reviewChips').innerHTML = ''
@@ -1164,7 +1458,7 @@ function resetToBeginning () {
   document.getElementById('reviewRemoved').textContent = '0'
   document.getElementById('reviewCountNote').textContent = ''
 
-  setStep(1)
+  setStep(0)
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
