@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"No unit test suite configured yet\"",
+    "smoke:api": "bash scripts/smoke-api.sh"
   },
   "keywords": [],
   "author": "",

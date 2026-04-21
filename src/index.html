@@ -193,14 +193,20 @@
 
                                 <!-- Upload zone -->
                                 <div class="upload-zone mb-3" id="uploadZone">
-                                    <div class="icon"><i class="bi bi-cloud-arrow-up"></i></div>
-                                    <p><strong>Click to choose a file</strong> or drag and drop here</p>
-                                    <p style="margin-top:0.25rem; font-size:0.78rem;">Supported formats: .txt, .pdf,
-                                        .docx</p>
                                     <input type="file" id="fileInput" accept=".txt,.pdf,.docx">
+                                    <div class="upload-zone-icon"><i class="bi bi-cloud-arrow-up"></i></div>
+                                    <div class="upload-zone-copy">
+                                        <p class="upload-zone-title"><strong>Click to choose a file</strong> or drag and drop here</p>
+                                        <p class="upload-zone-subtitle">Supported formats: .txt, .pdf, .docx</p>
+                                    </div>
                                 </div>
-                                <div class="file-selected" id="fileSelected">
-                                    <i class="bi bi-check-circle-fill"></i> <span id="fileName"></span>
+                                <div class="file-selected" id="fileSelected" aria-live="polite">
+                                    <div class="file-selected-icon"><i class="bi bi-check2-circle"></i></div>
+                                    <div class="file-selected-copy">
+                                        <div class="file-selected-label">File ready</div>
+                                        <div class="file-selected-name" id="fileName"></div>
+                                        <div class="file-selected-note">The file stays local until extraction begins.</div>
+                                    </div>
                                 </div>
 
                                 <!-- Extract button -->
@@ -263,43 +269,70 @@
                     <div id="section-quiz" class="d-none">
                         <div class="step-heading">
                             <div class="step-heading-label">Step 3 of 4</div>
-                            <h1 class="step-heading-title">Review generated questions</h1>
-                            <p class="step-heading-sub">Claude is generating one question per word. Remove any you don't
-                                want — a replacement is pulled from the pool automatically.</p>
+                            <h1 class="step-heading-title">Build the quiz</h1>
+                            <p class="step-heading-sub">Generated questions appear on the left. Add the ones you want to
+                                the quiz list on the right, then save the curated set.</p>
+                        </div>
+                        <div class="quiz-builder-banner">
+                            <i class="bi bi-arrow-right-circle"></i>
+                            <span>Add generated questions to the quiz list before saving. Use the right panel as the final
+                                set you will share with students.</span>
                         </div>
                         <div class="card mb-4">
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <span>
-                                    <span class="step-badge">Step 3</span> Review Quiz Questions
+                                    <span class="step-badge">Step 3</span> Review and add questions
                                 </span>
-                                <span class="pool-info mb-0" id="poolInfo"></span>
+                                <div class="quiz-header-tools">
+                                    <span class="pool-info mb-0" id="poolInfo"></span>
+                                    <div id="saveSection">
+                                        <button class="btn btn-save" id="saveBtn">
+                                            <i class="bi bi-cloud-upload"></i> Save Quiz
+                                        </button>
+                                        <span class="save-threshold-hint" id="saveThresholdHint">Add at least 1 question to save.</span>
+                                    </div>
+                                </div>
                             </div>
                             <div class="card-body p-4">
-                                <p
-                                    style="font-family:Arial,sans-serif; font-size:0.88rem; color:var(--muted); margin-bottom:1.25rem;">
-                                    Showing 5 questions at a time. Remove any you don't want — a replacement will be
-                                    pulled from the remaining pool automatically.
-                                </p>
-
-                                <!-- Spinner for API call -->
-                                <div class="d-flex align-items-center d-none" id="spinner-api">
+                                <div class="d-flex align-items-center d-none mb-3" id="spinner-api">
                                     <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
-                                    <span class="spinner-text">Streaming questions from Claude — they'll appear as
-                                        they're generated…</span>
+                                    <span class="spinner-text">Streaming questions from Claude — they appear as they are
+                                        generated…</span>
                                 </div>
 
-                                <!-- Question display area -->
-                                <div id="questionsDisplay"></div>
+                                <div class="quiz-builder-grid">
+                                    <section class="quiz-builder-column quiz-builder-generated" aria-labelledby="generatedQuestionsLabel">
+                                        <div class="quiz-builder-column-head">
+                                            <div>
+                                                <p class="quiz-builder-kicker" id="generatedQuestionsLabel">Generated questions</p>
+                                                <h2>Add from this list</h2>
+                                                <p>Click Add to Quiz on any question you want in the final set.</p>
+                                            </div>
+                                            <div class="quiz-column-actions">
+                                                <div class="quiz-list-count" id="generatedListCount">0 available</div>
+                                                <button type="button" class="btn-bulk-action" id="addAllBtn">Add all</button>
+                                            </div>
+                                        </div>
+                                        <div id="questionsDisplay"></div>
+                                    </section>
 
-                                <!-- Save button -->
-                                <div class="mt-4 d-none" id="saveSection">
-                                    <button class="btn btn-save btn-lg" id="saveBtn">
-                                        <i class="bi bi-cloud-upload"></i> Approve &amp; Save Quiz
-                                    </button>
-                                    <p class="mt-2"
-                                        style="font-family:Arial,sans-serif; font-size:0.8rem; color:var(--muted);">
-                                        Only the approved questions are saved — no exam content is stored.
-                                    </p>
+                                    <aside class="quiz-builder-column quiz-builder-selected" aria-labelledby="quizListLabel">
+                                        <div class="quiz-builder-column-head">
+                                            <div>
+                                                <p class="quiz-builder-kicker" id="quizListLabel">Quiz list</p>
+                                                <h2>Your final quiz</h2>
+                                                <p>These questions will be saved and shared with students.</p>
+                                            </div>
+                                            <div class="quiz-column-actions">
+                                                <div class="quiz-list-count" id="quizListCount">0 selected</div>
+                                                <button type="button" class="btn-bulk-action" id="removeAllBtn">Remove all</button>
+                                            </div>
+                                        </div>
+                                        <div class="quiz-list-empty" id="quizListEmpty">
+                                            Add questions from the left to build the quiz list.
+                                        </div>
+                                        <div id="quizList"></div>
+                                    </aside>
                                 </div>
                             </div>
                         </div>
@@ -355,7 +388,7 @@
     </div><!-- end section-lecturer-tool -->
 
     <!-- ══ Save Quiz Modal ══ -->
-    <div class="modal fade" id="saveModal" tabindex="-1" aria-labelledby="saveModalLabel" aria-hidden="true">
+    <div class="modal fade" id="saveModal" tabindex="-1" aria-labelledby="saveModalLabel" aria-modal="true" role="dialog" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -363,7 +396,7 @@
                         <i class="bi bi-cloud-upload text-success"></i>
                         Save Quiz
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <label for="quizTitleInput" class="form-label fw-semibold"

@@ -1,7 +1,4 @@
-/**
- * manage.js — Exam Language Trainer, Quiz Management Page
- * Displays the logged-in lecturer's quizzes and allows viewing links/QR and deleting.
- */
+// Quiz management page: list, share, and delete lecturer quizzes.
 
 import { db, auth } from './firebase.js'
 import {
@@ -37,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('confirmDeleteBtn').addEventListener('click', onConfirmDelete)
 
-  // Listen for auth state
+  // Redirect unauthenticated users.
   onAuthStateChanged(auth, (user) => {
     currentUser = user
     const userInfo = document.getElementById('userInfo')
@@ -48,13 +45,13 @@ document.addEventListener('DOMContentLoaded', () => {
       userEmail.textContent = user.email
       loadQuizzes()
     } else {
-      // Not signed in — redirect to main page
+      // Not signed in: return to main page.
       window.location.href = 'index.html'
     }
   })
 })
 
-// ── Load Quizzes ──────────────────────────────────────────────────────────────
+// ── Load quizzes ───────────────────────────────────────────────────────────────
 
 async function loadQuizzes () {
   const spinner = document.getElementById('spinner-loading')
@@ -86,7 +83,7 @@ async function loadQuizzes () {
   }
 }
 
-// ── Render ────────────────────────────────────────────────────────────────────
+// ── Render ─────────────────────────────────────────────────────────────────────
 
 function renderQuizzes () {
   const quizList = document.getElementById('quizList')
@@ -104,7 +101,7 @@ function renderQuizzes () {
   }
 
   quizList.innerHTML = quizzes.map(quiz => {
-    // Format the date
+    // Format creation date for display.
     const date = quiz.createdAt
       ? quiz.createdAt.toDate().toLocaleDateString('en-IE', {
           day: 'numeric', month: 'short', year: 'numeric'
@@ -137,12 +134,12 @@ function renderQuizzes () {
       </div>`
   }).join('')
 
-  // Wire up share buttons
+  // Bind share actions.
   document.querySelectorAll('.btn-share').forEach(btn => {
     btn.addEventListener('click', () => toggleDetail(btn.dataset.id))
   })
 
-  // Wire up delete buttons
+  // Bind delete actions.
   document.querySelectorAll('.btn-delete').forEach(btn => {
     btn.addEventListener('click', () => {
       deleteTargetId = btn.dataset.id
@@ -151,7 +148,7 @@ function renderQuizzes () {
     })
   })
 
-  // Wire up copy buttons
+  // Bind copy-link actions.
   document.querySelectorAll('.btn-copy').forEach(btn => {
     btn.addEventListener('click', () => {
       const urlEl = document.getElementById(`url-${btn.dataset.id}`)
@@ -164,24 +161,24 @@ function renderQuizzes () {
   })
 }
 
-// ── Toggle Detail Panel (Link + QR) ──────────────────────────────────────────
+// ── Toggle detail panel (link + QR) ───────────────────────────────────────────
 
 function toggleDetail (quizId) {
   const panel = document.getElementById(`detail-${quizId}`)
   const isOpen = panel.classList.contains('open')
 
-  // Close all other panels
+  // Keep only one panel open at a time.
   document.querySelectorAll('.quiz-detail-panel').forEach(p => p.classList.remove('open'))
 
   if (!isOpen) {
     panel.classList.add('open')
 
-    // Set the URL
+    // Set share URL.
     const quizUrl = `${window.location.origin}/quiz.html?id=${quizId}`
     const urlEl = document.getElementById(`url-${quizId}`)
     urlEl.textContent = quizUrl
 
-    // Generate QR code (only if not already generated)
+    // Lazily generate QR code once per quiz panel.
     const qrContainer = document.getElementById(`qr-${quizId}`)
     if (qrContainer.children.length === 0) {
       new QRCode(qrContainer, {
@@ -196,7 +193,7 @@ function toggleDetail (quizId) {
   }
 }
 
-// ── Delete ────────────────────────────────────────────────────────────────────
+// ── Delete ─────────────────────────────────────────────────────────────────────
 
 async function onConfirmDelete () {
   if (!deleteTargetId) return
@@ -208,7 +205,7 @@ async function onConfirmDelete () {
   try {
     await deleteDoc(doc(db, 'quizzes', deleteTargetId))
 
-    // Remove from local state and re-render
+    // Remove local item and refresh list.
     quizzes = quizzes.filter(q => q.id !== deleteTargetId)
     deleteTargetId = null
     deleteModal.hide()

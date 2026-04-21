@@ -18,9 +18,13 @@ const CLOUD_API_BASE =
   'https://us-central1-exam-language-trainer-3abec.cloudfunctions.net/api'
 const LOCAL_API_BASE =
   'http://127.0.0.1:5001/exam-language-trainer-3abec/us-central1/api'
+const DEFAULT_API_BASE_KEY = 'eltApiBase'
+
+const storedApiBase = window.localStorage.getItem(DEFAULT_API_BASE_KEY)
+const hasManualApiBaseOverride = Boolean(storedApiBase && storedApiBase.trim())
 
 function resolveApiBase () {
-  const stored = window.localStorage.getItem('eltApiBase')
+  const stored = window.localStorage.getItem(DEFAULT_API_BASE_KEY)
   if (stored && stored.trim()) return stored.trim()
 
   const isLocalHost =
@@ -30,27 +34,69 @@ function resolveApiBase () {
   return isLocalHost ? LOCAL_API_BASE : CLOUD_API_BASE
 }
 
-const API_BASE = resolveApiBase()
-const COURSE_EXTRACT_ENDPOINT = `${API_BASE}/extract-course-vocabulary`
-const DISPLAY_SIZE = 5 // Questions shown to lecturer at one time
-const POOL_SIZE = 30 // Max words shown to lecturer in confirmation modal
-const MIN_REVIEW_WORDS = 15 // Minimum target words before fallback backfill
+let API_BASE = resolveApiBase()
+const POOL_SIZE = 60 // Target words shown to lecturer in confirmation modal
+const MIN_REVIEW_WORDS = 30 // Minimum target words before fallback backfill
+const MIN_QUIZ_QUESTIONS_TO_SAVE = 1
+const GENERATION_BATCH_SIZE = 10
+const MAX_PARALLEL_STREAMS = 2
 
-/**
- * Common words list — loaded from the bundled easy-word lists at startup.
- */
+function shouldAutoFallbackToCloud () {
+  return API_BASE === LOCAL_API_BASE && !hasManualApiBaseOverride
+}
+
+function getApiUrl (path, base = API_BASE) {
+  return `${base}${path}`
+}
+
+async function fetchWithApiFallback (path, options) {
+  const manualBase = window.localStorage.getItem(DEFAULT_API_BASE_KEY)?.trim()
+  const attemptBases = manualBase
+    ? [manualBase]
+    : shouldAutoFallbackToCloud()
+      ? [LOCAL_API_BASE, CLOUD_API_BASE]
+      : [API_BASE]
+
+  let lastError = null
+
+  for (const base of attemptBases) {
+    try {
+      const response = await fetch(getApiUrl(path, base), options)
+
+      if (!manualBase && base === CLOUD_API_BASE && API_BASE !== CLOUD_API_BASE) {
+        API_BASE = CLOUD_API_BASE
+      }
+
+      return response
+    } catch (error) {
+      lastError = error
+
+      if (!manualBase && base === LOCAL_API_BASE) {
+        console.warn(
+          'Local Functions API unreachable. Falling back to deployed API.',
+          error
+        )
+        continue
+      }
+
+      throw error
+    }
+  }
+
+  throw lastError || new Error('API request failed before reaching the server.')
+}
+
+// Common-word dictionary loaded once at startup.
 let COMMON_WORDS = new Set()
 
 // ── State ──────────────────────────────────────────────────────────────────────
 
-/**
- * questionPool: all questions returned by Claude (up to 15).
- * displayedQuestions: the 5 currently shown on screen.
- * nextPoolIndex: pointer into questionPool — how far we've consumed it.
- */
+// Quiz streaming state.
+// questionPool: all generated questions.
 let questionPool = []
-let displayedQuestions = []
-let nextPoolIndex = 0
+let quizQuestions = []
+let filteredInvalidQuestionCount = 0
+let quizGenerationComplete = false
 let currentUser = null // Firebase Auth user object
 let processingMode = null // exam-local | course-server
 
@@ -61,6 +107,9 @@ let extractBtn
 let spinnerExtract, spinnerApi
 let sectionMode, sectionUpload, sectionQuiz, sectionSaved
 let poolInfo, questionsDisplay, saveSection, saveBtn
+let quizList, quizListCount, quizListEmpty
+let generatedListCount, saveThresholdHint
+let addAllBtn, removeAllBtn
 let shareUrlEl, copyBtn
 let saveModal, quizTitleInput, confirmSaveBtn
 let viewQuizBtn, downloadQrBtn, startOverBtn
@@ -76,9 +125,7 @@ let selectedWords = new Set() // Words currently selected for sending to Claude
 // ── Initialisation ────────────────────────────────────────────────────────────
 
 async function loadCommonWords () {
-  /**
-   * Fetches the bundled easy-word lists and merges them into a single set.
-   */
+  // Merge bundled easy-word lists into one lookup set.
   try {
     const [ngslResponse, basicResponse] = await Promise.all([
       fetch('../libs/common_words_ngsl.txt'),
@@ -95,7 +142,6 @@ async function loadCommonWords () {
     const basicWords = parseWordList(await basicResponse.text())
 
     COMMON_WORDS = new Set([...ngslWords, ...basicWords])
-    console.log(`Common words loaded: ${COMMON_WORDS.size} words`)
   } catch (error) {
     console.warn(
       'Could not load common word lists — filtering will be limited.',
@@ -106,10 +152,10 @@ async function loadCommonWords () {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  // Load common words list before anything else
+  // Load common words before wiring extraction flow.
   await loadCommonWords()
 
-  // Grab all DOM references
+  // Cache DOM references.
   fileInput = document.getElementById('fileInput')
   uploadZone = document.getElementById('uploadZone')
   fileSelected = document.getElementById('fileSelected')
@@ -125,12 +171,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   questionsDisplay = document.getElementById('questionsDisplay')
   saveSection = document.getElementById('saveSection')
   saveBtn = document.getElementById('saveBtn')
+  quizList = document.getElementById('quizList')
+  quizListCount = document.getElementById('quizListCount')
+  quizListEmpty = document.getElementById('quizListEmpty')
+  generatedListCount = document.getElementById('generatedListCount')
+  saveThresholdHint = document.getElementById('saveThresholdHint')
+  addAllBtn = document.getElementById('addAllBtn')
+  removeAllBtn = document.getElementById('removeAllBtn')
   shareUrlEl = document.getElementById('shareUrl')
   copyBtn = document.getElementById('copyBtn')
   viewQuizBtn = document.getElementById('viewQuizBtn')
   downloadQrBtn = document.getElementById('downloadQrBtn')
   startOverBtn = document.getElementById('startOverBtn')
-  // New listeners for the review page:
+  // Review step actions.
   document
     .getElementById('reviewContinueBtn')
     .addEventListener('click', onConfirmAndGenerate)
@@ -155,7 +208,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   extractBtnLabel = document.getElementById('extractBtnLabel')
   extractSpinnerText = document.getElementById('extractSpinnerText')
 
-  // Wire up events
+  // Bind UI events.
   uploadZone.addEventListener('click', () => fileInput.click())
   fileInput.addEventListener('change', onFileSelected)
   uploadZone.addEventListener('dragover', e => {
@@ -171,6 +224,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   modeCourseBtn.addEventListener('click', () => onModeSelected('course-server'))
   sidebarModePickerBtn.addEventListener('click', resetToBeginning)
   saveBtn.addEventListener('click', onSave)
+  addAllBtn.addEventListener('click', addAllQuestionsToQuiz)
+  removeAllBtn.addEventListener('click', removeAllQuestionsFromQuiz)
   quizTitleInput.addEventListener('input', () => {
     confirmSaveBtn.disabled = !quizTitleInput.value.trim()
   })
@@ -181,12 +236,22 @@ document.addEventListener('DOMContentLoaded', async () => {
   })
   startOverBtn.addEventListener('click', resetToBeginning)
 
-  // ── Auth events ──
+  // Delegate add-to-quiz clicks so newly streamed cards work without rebinding all cards.
+  questionsDisplay.addEventListener('click', event => {
+    const addButton = event.target.closest('.btn-add-to-quiz')
+    if (!addButton) return
+
+    const idx = Number(addButton.dataset.index)
+    if (Number.isNaN(idx)) return
+    addQuestionToQuiz(idx)
+  })
+
+  // Auth actions.
   document.getElementById('signInBtn').addEventListener('click', onSignIn)
   document.getElementById('registerBtn').addEventListener('click', onRegister)
   document.getElementById('sidebarSignOutBtn').addEventListener('click', onSignOut)
 
-  // Listen for auth state changes — this fires on page load too
+  // Fires on initial load and every auth change.
   onAuthStateChanged(auth, user => {
     currentUser = user
     const authSection = document.getElementById('section-auth')
@@ -194,22 +259,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     const sidebarUserEmail = document.getElementById('sidebarUserEmail')
 
     if (user) {
-      // Logged in — show lecturer tool, hide sign-in
+      // Logged in: show tool, hide auth panel.
       authSection.classList.add('d-none')
       toolSection.classList.remove('d-none')
       sidebarUserEmail.textContent = user.email
       showModeSelection()
     } else {
-      // Logged out — show sign-in, hide lecturer tool
+      // Logged out: show auth panel, hide tool.
       authSection.classList.remove('d-none')
       toolSection.classList.add('d-none')
       sidebarUserEmail.textContent = ''
     }
   })
 
-  console.log('Exam Language Trainer initialised')
-  console.log('Compromise loaded:', typeof nlp !== 'undefined')
-  console.log('removeStopwords loaded:', typeof removeStopwords !== 'undefined')
 })
 
 // ── Authentication ────────────────────────────────────────────────────────────
@@ -318,8 +380,13 @@ function setFile (file) {
   }
   // Show file name
   fileNameSpan.textContent = file.name
-  fileSelected.style.display = 'block'
-  uploadZone.style.borderColor = 'var(--success)'
+  fileSelected.style.display = 'flex'
+  fileSelected.classList.remove('is-visible')
+  void fileSelected.offsetWidth
+  fileSelected.classList.add('is-visible')
+  uploadZone.classList.remove('has-file')
+  void uploadZone.offsetWidth
+  uploadZone.classList.add('has-file')
   checkExtractReady()
 }
 
@@ -372,7 +439,8 @@ function clearSelectedFile () {
   fileInput.value = ''
   fileNameSpan.textContent = ''
   fileSelected.style.display = 'none'
-  uploadZone.style.borderColor = 'rgba(125, 211, 160, 0.25)'
+  fileSelected.classList.remove('is-visible')
+  uploadZone.classList.remove('has-file')
 }
 
 function onModeSelected (mode) {
@@ -403,7 +471,7 @@ function showModeSelection () {
   setStep(0)
 }
 
-/** Enable the Extract button only when both file and subject are provided */
+// Enable extraction only when both file and mode are set.
 function checkExtractReady () {
   const hasFile = fileInput.files && fileInput.files[0]
   extractBtn.disabled = !hasFile || !processingMode
@@ -411,10 +479,7 @@ function checkExtractReady () {
 
 // ── Phase 1: Client-side NLP extraction ──────────────────────────────────────
 
-/**
- * onExtract — triggered when lecturer clicks "Extract Vocabulary"
- * This runs entirely in the browser. No network call happens here.
- */
+// Start extraction flow for the selected processing mode.
 async function onExtract () {
   const file = fileInput.files[0]
 
@@ -423,7 +488,7 @@ async function onExtract () {
     return
   }
 
-  // Show spinner
+  // Show extraction spinner.
   spinnerExtract.classList.remove('d-none')
   extractBtn.disabled = true
 
@@ -442,7 +507,7 @@ async function onExtract () {
       return
     }
 
-    // Show confirmation modal (Phase 2)
+    // Move to review step.
     showConfirmationModal(candidateWords)
   } catch (error) {
     console.error('Extraction error:', error)
@@ -462,13 +527,13 @@ async function extractCandidateWordsLocally (file) {
   let text
 
   if (file.name.toLowerCase().endsWith('.pdf')) {
-    // PDF path — use PDF.js to extract text client-side
+    // PDF path.
     text = await extractTextFromPDF(file)
   } else if (file.name.toLowerCase().endsWith('.docx')) {
-    // DOCX path — use Mammoth.js to extract text client-side
+    // DOCX path.
     text = await extractTextFromDOCX(file)
   } else {
-    // Plain text path — use FileReader as before
+    // TXT path.
     text = await readFileAsText(file)
   }
 
@@ -478,7 +543,7 @@ async function extractCandidateWordsLocally (file) {
 async function extractCandidateWordsOnServer (file) {
   const filePayload = await fileToBase64Payload(file)
 
-  const response = await fetch(COURSE_EXTRACT_ENDPOINT, {
+  const response = await fetchWithApiFallback('/extract-course-vocabulary', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -496,7 +561,7 @@ async function extractCandidateWordsOnServer (file) {
         const text = await response.text()
         if (text) errorMessage = text.slice(0, 220)
       } catch {
-        // Keep fallback error message when response body cannot be read.
+        // Keep default fallback message.
       }
     }
     throw new Error(
@@ -529,11 +594,7 @@ async function fileToBase64Payload (file) {
   }
 }
 
-/**
- * readFileAsText — wraps FileReader in a Promise so we can use async/await.
- * Previously the FileReader callback was inline in onExtract; extracting it
- * keeps the two paths (txt and pdf) parallel in structure.
- */
+// Wrap FileReader in a Promise for consistent async flow.
 function readFileAsText (file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -543,22 +604,17 @@ function readFileAsText (file) {
   })
 }
 
-/**
- * extractTextFromPDF — reads a PDF file entirely client-side using PDF.js.
- * The PDF never leaves the browser. Each page's text content is extracted
- * and concatenated into a single string for the NLP pipeline.
- */
+// Extract text from all PDF pages for NLP processing.
 async function extractTextFromPDF (file) {
-  // Convert file to ArrayBuffer for PDF.js
+  // Convert file to ArrayBuffer for PDF.js.
   const arrayBuffer = await file.arrayBuffer()
 
-  // Load the PDF document
+  // Load PDF document.
   const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
-  console.log(`PDF loaded: ${pdf.numPages} pages`)
 
   let fullText = ''
 
-  // Extract text from each page
+  // Extract text page by page.
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i)
     const content = await page.getTextContent()
@@ -566,7 +622,6 @@ async function extractTextFromPDF (file) {
     fullText += pageText + ' '
   }
 
-  console.log(`PDF text extracted: ${fullText.length} characters`)
   return fullText
 }
 
@@ -575,11 +630,11 @@ function updateSelectionUI () {
   const totalCount = candidateWords.length
   const removedCount = totalCount - selectedCount
 
-  // Update stat cards
+  // Update summary cards.
   document.getElementById('reviewKeeping').textContent = selectedCount
   document.getElementById('reviewRemoved').textContent = removedCount
 
-  // Get references
+  // Review controls.
   const note = document.getElementById('reviewCountNote')
   const continueBtn = document.getElementById('reviewContinueBtn')
 
@@ -592,21 +647,14 @@ function updateSelectionUI () {
   }
 }
 
-/**
- * extractTextFromDOCX — reads a Word .docx file entirely client-side using Mammoth.js.
- * The document never leaves the browser. Mammoth extracts the raw text content,
- * stripping all formatting, which is exactly what the NLP pipeline needs.
- */
+// Extract raw text from DOCX using Mammoth.
 async function extractTextFromDOCX (file) {
   const arrayBuffer = await file.arrayBuffer()
   const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer })
-  console.log(`DOCX text extracted: ${result.value.length} characters`)
   return result.value
 }
 
-/**
- * extractVocabulary — ranks likely difficult vocabulary from the source text.
- */
+// Rank likely difficult vocabulary from source text.
 function extractVocabulary (text) {
   const doc = nlp(text)
 
@@ -666,8 +714,7 @@ function extractVocabulary (text) {
       adverbs
     )
 
-    // Keep strong academic-looking terms even if POS tagging is uncertain,
-    // but reject short unknown-POS noise.
+    // Keep strong academic-like terms even with weak POS confidence.
     if (posScore === 0 && !hasAcademicSuffix(term) && term.length < 7) continue
 
     const entry = stats.get(term) || {
@@ -697,8 +744,10 @@ function extractVocabulary (text) {
         a.word.localeCompare(b.word)
     )
 
-  // Keep the highest-value candidate words, not the merely rare ones.
-  const result = ranked.slice(0, POOL_SIZE).map(entry => entry.word)
+  // Keep highest-value candidates, not just rare tokens.
+  const result = selectTopCandidatesWithTies(ranked, POOL_SIZE).map(
+    entry => entry.word
+  )
 
   if (result.length < MIN_REVIEW_WORDS) {
     const selected = new Set(result)
@@ -723,9 +772,6 @@ function extractVocabulary (text) {
     }
   }
 
-  console.log(
-    `NLP extracted ${result.length} candidate words from ${ranked.length} strict-ranked terms`
-  )
   return result
 }
 
@@ -992,22 +1038,231 @@ function scoreDifficultyRelaxed (entry) {
   return score
 }
 
-// ── Phase 2: Confirmation modal ───────────────────────────────────────────────
+function selectTopCandidatesWithTies (ranked, targetSize) {
+  if (ranked.length <= targetSize) return ranked
+
+  const cutoffScore = ranked[targetSize - 1].score
+  let endIndex = targetSize
+
+  while (endIndex < ranked.length && ranked[endIndex].score === cutoffScore) {
+    endIndex++
+  }
+
+  return ranked.slice(0, endIndex)
+}
+
+function getQuestionKey (question) {
+  if (!question) return ''
+  const options = Array.isArray(question.options) ? question.options.join('||') : ''
+  return [
+    question.question || '',
+    question.correct || '',
+    options
+  ].join('::')
+}
+
+function isQuestionInQuiz (question) {
+  const key = getQuestionKey(question)
+  return quizQuestions.some(existing => getQuestionKey(existing) === key)
+}
+
+function addQuestionToQuiz (displayIndex) {
+  const question = questionPool[displayIndex]
+  if (!question || isQuestionInQuiz(question)) return
+
+  quizQuestions.push(question)
+  updateQuizListUI()
+  removeGeneratedQuestionCard(displayIndex)
+}
+
+function removeQuestionFromQuiz (question) {
+  const key = getQuestionKey(question)
+  const nextQuizQuestions = quizQuestions.filter(
+    existing => getQuestionKey(existing) !== key
+  )
+
+  if (nextQuizQuestions.length === quizQuestions.length) return
+
+  quizQuestions = nextQuizQuestions
+  updateQuizListUI()
+  restoreGeneratedQuestionCard(key)
+}
+
+function removeGeneratedQuestionCard (questionIndex) {
+  const card = questionsDisplay.querySelector(`.question-card[data-index="${questionIndex}"]`)
+  if (card) card.remove()
+
+  if (!questionsDisplay.querySelector('.question-card')) {
+    renderQuestions()
+  }
+}
+
+function restoreGeneratedQuestionCard (questionKey) {
+  const questionIndex = questionPool.findIndex(
+    question => getQuestionKey(question) === questionKey
+  )
+  if (questionIndex === -1) return
+
+  if (questionsDisplay.querySelector(`.question-card[data-index="${questionIndex}"]`)) {
+    return
+  }
+
+  const emptyState = questionsDisplay.querySelector('.questions-empty')
+  if (emptyState) emptyState.remove()
+
+  const nextCard = [...questionsDisplay.querySelectorAll('.question-card')].find(
+    cardEl => Number(cardEl.dataset.index) > questionIndex
+  )
+  const cardMarkup = buildQuestionCard(questionPool[questionIndex], questionIndex)
+
+  if (nextCard) {
+    nextCard.insertAdjacentHTML('beforebegin', cardMarkup)
+  } else {
+    questionsDisplay.insertAdjacentHTML('beforeend', cardMarkup)
+  }
+
+  updateQuestionCardStates()
+}
+
+function updateQuestionCardStates () {
+  questionsDisplay.querySelectorAll('.question-card').forEach(cardEl => {
+    const index = Number(cardEl.dataset.index)
+    const question = questionPool[index]
+    if (!question) return
+
+    const isAdded = isQuestionInQuiz(question)
+    cardEl.classList.toggle('added-to-quiz', isAdded)
+
+    const addBtn = cardEl.querySelector('.btn-add-to-quiz')
+    if (addBtn) {
+      addBtn.disabled = isAdded
+      addBtn.innerHTML = isAdded
+        ? '<i class="bi bi-check-lg"></i> Added to quiz'
+        : '<i class="bi bi-plus-lg"></i> Add to quiz'
+    }
+  })
+}
+
+function updateQuizListUI () {
+  if (!quizList || !quizListCount || !quizListEmpty) return
+
+  quizListCount.textContent = `${quizQuestions.length} in quiz list`
+  quizListEmpty.classList.toggle('d-none', quizQuestions.length > 0)
+  quizList.innerHTML = quizQuestions
+    .map((question, index) => {
+      const questionLabel = `Question ${index + 1}`
+      const optionsText = question.options.slice(0, 2).join(' • ')
+
+      return `
+        <div class="quiz-list-card" data-index="${index}">
+          <div class="quiz-list-card-index">${questionLabel}</div>
+          <div class="quiz-list-card-title">${question.question}</div>
+          <div class="quiz-list-card-meta">${optionsText}</div>
+          <div class="quiz-list-card-actions">
+            <span class="quiz-list-card-index">In quiz list</span>
+            <button type="button" class="btn-remove" data-index="${index}">
+              <i class="bi bi-x"></i> Remove
+            </button>
+          </div>
+        </div>
+      `
+    })
+    .join('')
+
+  quizList.querySelectorAll('.btn-remove').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const index = Number(btn.dataset.index)
+      const question = quizQuestions[index]
+      if (!question) return
+      removeQuestionFromQuiz(question)
+    })
+  })
+
+  const generationDone = quizGenerationComplete
+  saveBtn.disabled = !generationDone || quizQuestions.length < MIN_QUIZ_QUESTIONS_TO_SAVE
+
+  if (saveThresholdHint) {
+    if (!generationDone) {
+      saveThresholdHint.textContent = 'Save unlocks after generation finishes.'
+    } else if (quizQuestions.length < MIN_QUIZ_QUESTIONS_TO_SAVE) {
+      saveThresholdHint.textContent = `Add at least ${MIN_QUIZ_QUESTIONS_TO_SAVE} question to save.`
+    } else {
+      saveThresholdHint.textContent = `Ready to save (${quizQuestions.length} selected).`
+    }
+  }
+
+  updateGeneratedListCount()
+  updateBulkActionButtons()
+  updatePoolInfo()
+}
+
+function updateGeneratedListCount () {
+  if (!generatedListCount) return
+
+  const available = questionPool.filter(question => !isQuestionInQuiz(question)).length
+  generatedListCount.textContent = `${available} available`
+}
+
+function updateBulkActionButtons () {
+  const generationDone = quizGenerationComplete
+  const available = questionPool.filter(question => !isQuestionInQuiz(question)).length
+
+  if (addAllBtn) {
+    addAllBtn.disabled = !generationDone || available === 0
+    addAllBtn.textContent = available > 0 ? `Add all (${available})` : 'Add all'
+  }
+
+  if (removeAllBtn) {
+    removeAllBtn.disabled = !generationDone || quizQuestions.length === 0
+    removeAllBtn.textContent =
+      quizQuestions.length > 0 ? `Remove all (${quizQuestions.length})` : 'Remove all'
+  }
+}
+
+function addAllQuestionsToQuiz () {
+  let addedCount = 0
+
+  for (const question of questionPool) {
+    if (isQuestionInQuiz(question)) continue
+    quizQuestions.push(question)
+    addedCount += 1
+  }
+
+  if (addedCount === 0) return
+
+  updateQuizListUI()
+  renderQuestions()
+}
+
+function removeAllQuestionsFromQuiz () {
+  if (quizQuestions.length === 0) return
+
+  const shouldClearAll = window.confirm(
+    `Remove all ${quizQuestions.length} question${quizQuestions.length === 1 ? '' : 's'} from the quiz list?`
+  )
+  if (!shouldClearAll) return
+
+  quizQuestions = []
+  updateQuizListUI()
+  renderQuestions()
+}
+
+// ── Phase 2: Review selections ────────────────────────────────────────────────
 
 function showConfirmationModal (words) {
-  // Reset state: every word starts selected
+  // Start with all words selected.
   selectedWords = new Set(words)
 
-  // Update stat cards
+  // Show extracted count.
   document.getElementById('reviewExtracted').textContent = words.length
 
-  // Render chips into the review section
+  // Render word chips.
   const reviewChipsEl = document.getElementById('reviewChips')
   reviewChipsEl.innerHTML = words
     .map(w => `<span class="word-chip" data-word="${w}">${w}</span>`)
     .join('')
 
-  // Wire up chip clicks
+  // Toggle word inclusion on chip click.
   reviewChipsEl.querySelectorAll('.word-chip').forEach(chip => {
     chip.addEventListener('click', () => {
       const word = chip.dataset.word
@@ -1022,7 +1277,7 @@ function showConfirmationModal (words) {
     })
   })
 
-  // Swap sections: hide upload, show review
+  // Swap upload section for review section.
   document.getElementById('section-upload').classList.add('d-none')
   document.getElementById('section-review').classList.remove('d-none')
 
@@ -1030,104 +1285,73 @@ function showConfirmationModal (words) {
   updateSelectionUI()
 }
 
-// ── Phase 3: API call ─────────────────────────────────────────────────────────
+// ── Phase 3: Generate quiz ────────────────────────────────────────────────────
 
-/**
- * onConfirmAndGenerate — triggered when lecturer clicks "Send to Claude"
- *
- * STREAMING VERSION: Instead of waiting for the full API response,
- * this reads Server-Sent Events from the backend and renders each
- * question as soon as Claude finishes generating it. The lecturer
- * sees questions appearing one by one instead of waiting 5-8 seconds.
- */
+// Request quiz generation and progressively render streamed questions.
 async function onConfirmAndGenerate () {
   document.getElementById('section-review').classList.add('d-none')
 
-  // Show quiz section with spinner
+  // Show quiz section and loading state.
   sectionQuiz.classList.remove('d-none')
   spinnerApi.classList.remove('d-none')
-  saveSection.classList.add('d-none')
   setStep(3)
 
-  // Scroll to quiz section
+  // Bring quiz section into view.
   sectionQuiz.scrollIntoView({ behavior: 'smooth' })
 
-  // Reset state
+  // Reset question state for a fresh run.
   questionPool = []
-  displayedQuestions = []
-  nextPoolIndex = 0
-  questionsDisplay.innerHTML = ''
+  quizQuestions = []
+  filteredInvalidQuestionCount = 0
+  quizGenerationComplete = false
+  renderQuestions()
+  updateQuizListUI()
 
   try {
-    const response = await fetch(`${API_BASE}/generate-quiz`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        words: [...selectedWords]
-      })
-    })
+    const selectedWordList = [...selectedWords]
+    const batches = chunkWords(selectedWordList, GENERATION_BATCH_SIZE)
+    const spinnerTextEl = spinnerApi.querySelector('.spinner-text')
+    const totalBatches = batches.length
 
-    if (!response.ok) {
-      const err = await response.text()
-      throw new Error(`API error: ${err}`)
+    if (spinnerTextEl) {
+      spinnerTextEl.textContent =
+        `Streaming ${selectedWordList.length} questions in ${totalBatches} batch${totalBatches === 1 ? '' : 'es'}...`
     }
 
-    // Read the SSE stream
-    const reader = response.body.getReader()
-    const decoder = new TextDecoder()
-    let rawText = '' // Accumulates the full Claude response
-    let sseBuffer = '' // Handles partial SSE lines
+    let nextBatchIndex = 0
+    let completedBatches = 0
 
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
+    const runNextBatch = async () => {
+      while (nextBatchIndex < batches.length) {
+        const batchIndex = nextBatchIndex
+        nextBatchIndex += 1
 
-      // Decode the chunk and add to SSE buffer
-      sseBuffer += decoder.decode(value, { stream: true })
+        await streamQuestionBatch(batches[batchIndex])
 
-      // Process complete SSE lines
-      const lines = sseBuffer.split('\n')
-      // Keep the last (potentially incomplete) line in the buffer
-      sseBuffer = lines.pop()
-
-      for (const line of lines) {
-        if (!line.startsWith('data: ')) continue
-        const jsonStr = line.slice(6) // Remove "data: " prefix
-
-        try {
-          const event = JSON.parse(jsonStr)
-
-          if (event.error) {
-            throw new Error(event.error)
-          }
-
-          if (event.done) {
-            console.log('Stream complete')
-            break
-          }
-
-          if (event.text) {
-            rawText += event.text
-
-            // Try to extract complete question objects from what we have so far
-            tryParseQuestions(rawText)
-          }
-        } catch (parseErr) {
-          // Ignore malformed chunks that are still being streamed.
-          if (parseErr instanceof SyntaxError) {
-            continue
-          }
-          throw parseErr
+        completedBatches += 1
+        if (spinnerTextEl) {
+          spinnerTextEl.textContent =
+            `Streaming ${selectedWordList.length} questions... ${completedBatches}/${totalBatches} batches complete`
         }
       }
     }
 
-    // Final parse attempt on complete response
-    tryParseQuestions(rawText)
+    const workerCount = Math.min(MAX_PARALLEL_STREAMS, batches.length)
+    const batchResults = await Promise.allSettled(
+      Array.from({ length: workerCount }, () => runNextBatch())
+    )
+
+    const failedWorkers = batchResults.filter(result => result.status === 'rejected')
+    if (failedWorkers.length > 0) {
+      throw failedWorkers[0].reason
+    }
+
     if (questionPool.length === 0) {
       throw new Error('No quiz questions were returned. Please try again.')
     }
-    console.log(`Stream finished. Total questions: ${questionPool.length}`)
+
+    quizGenerationComplete = true
+    updateQuizListUI()
   } catch (error) {
     console.error('Generation error:', error)
     questionsDisplay.innerHTML = `
@@ -1135,35 +1359,132 @@ async function onConfirmAndGenerate () {
                 <strong>Error:</strong> Failed to generate quiz. Please check your connection and try again.
                 <br><small>${error.message}</small>
             </div>`
+    quizGenerationComplete = false
+    updateQuizListUI()
   } finally {
     spinnerApi.classList.add('d-none')
   }
 
   if (questionPool.length > 0) {
-    saveSection.classList.remove('d-none')
+    updateQuizListUI()
   }
 }
 
-/**
- * tryParseQuestions — attempts to extract complete question objects from
- * the raw streamed text. Called repeatedly as new text arrives.
- *
- * Strategy: Claude returns a JSON array like [{...}, {...}, ...].
- * We look for complete objects by finding matched { } pairs.
- * Each time we find a new complete object, we add it to the pool
- * and update the display.
- */
-function tryParseQuestions (rawText) {
-  // Strip markdown code fences if present
+function chunkWords (words, chunkSize) {
+  const chunks = []
+
+  for (let i = 0; i < words.length; i += chunkSize) {
+    chunks.push(words.slice(i, i + chunkSize))
+  }
+
+  return chunks
+}
+
+async function streamQuestionBatch (wordBatch) {
+  const response = await fetchWithApiFallback('/generate-quiz', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      words: wordBatch
+    })
+  })
+
+  if (!response.ok) {
+    const err = await response.text()
+    throw new Error(`API error: ${err}`)
+  }
+
+  if (!response.body || typeof response.body.getReader !== 'function') {
+    throw new Error('API returned an invalid streaming response.')
+  }
+
+  const reader = response.body.getReader()
+  const decoder = new TextDecoder()
+  let rawText = ''
+  let sseBuffer = ''
+  let seenObjectCount = 0
+
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+
+    sseBuffer += decoder.decode(value, { stream: true })
+    const lines = sseBuffer.split('\n')
+    sseBuffer = lines.pop()
+
+    for (const line of lines) {
+      if (!line.startsWith('data: ')) continue
+      const jsonStr = line.slice(6)
+
+      try {
+        const event = JSON.parse(jsonStr)
+
+        if (event.error) {
+          throw new Error(event.error)
+        }
+
+        if (event.done) {
+          break
+        }
+
+        if (event.text) {
+          rawText += event.text
+          seenObjectCount = mergeParsedBatchQuestions(rawText, seenObjectCount)
+        }
+      } catch (parseErr) {
+        if (parseErr instanceof SyntaxError) {
+          continue
+        }
+        throw parseErr
+      }
+    }
+  }
+
+  mergeParsedBatchQuestions(rawText, seenObjectCount)
+}
+
+function mergeParsedBatchQuestions (rawText, seenObjectCount) {
+  const parsedObjects = parseQuestionsFromRaw(rawText)
+  if (!Array.isArray(parsedObjects)) {
+    return seenObjectCount
+  }
+
+  if (parsedObjects.length <= seenObjectCount) {
+    return seenObjectCount
+  }
+
+  const existingKeys = new Set(questionPool.map(getQuestionKey))
+  const nextObjects = parsedObjects.slice(seenObjectCount)
+  const uniqueNewQuestions = []
+
+  for (const question of nextObjects) {
+    const key = getQuestionKey(question)
+    if (existingKeys.has(key)) continue
+    existingKeys.add(key)
+    uniqueNewQuestions.push(question)
+  }
+
+  if (uniqueNewQuestions.length > 0) {
+    const previousCount = questionPool.length
+    questionPool.push(...uniqueNewQuestions)
+    appendNewQuestions(previousCount)
+  }
+
+  return parsedObjects.length
+}
+
+// Extract complete question objects from partial streamed JSON.
+function parseQuestionsFromRaw (rawText) {
+  // Strip optional markdown code fences.
   const cleaned = rawText.replace(/```json\n?|\n?```/g, '').trim()
 
-  // Find the opening bracket
+  // Find JSON array start.
   const startIdx = cleaned.indexOf('[')
-  if (startIdx === -1) return
+  if (startIdx === -1) return []
 
   const content = cleaned.slice(startIdx)
 
-  // Count complete question objects by tracking brace depth
+  // Track brace depth to isolate complete objects.
   let depth = 0
   let inString = false
   let escape = false
@@ -1196,130 +1517,115 @@ function tryParseQuestions (rawText) {
         const objStr = content.slice(objectStart, i + 1)
         try {
           const obj = JSON.parse(objStr)
-          objects.push(obj)
+          if (isValidQuestionObject(obj)) {
+            objects.push(obj)
+          } else {
+          }
         } catch (e) {
-          // Incomplete or malformed — skip
+          // Skip incomplete/malformed objects.
         }
         objectStart = -1
       }
     }
   }
 
-  // If we found new questions, add them to the pool and update display
-  if (objects.length > questionPool.length) {
-    const newQuestions = objects.slice(questionPool.length)
-    questionPool = objects
-    console.log(
-      `Parsed ${newQuestions.length} new question(s), total: ${questionPool.length}`
-    )
+  return objects
+}
 
-    // Update display
-    fillDisplay()
+function isValidQuestionObject (question) {
+  if (!question || typeof question !== 'object') return false
+  if (typeof question.question !== 'string' || !question.question.trim()) return false
+  if (typeof question.correct !== 'string' || !/^[A-D]$/.test(question.correct.trim())) {
+    return false
   }
+  if (!Array.isArray(question.options) || question.options.length !== 4) return false
+
+  for (const option of question.options) {
+    if (typeof option !== 'string' || !option.trim()) return false
+  }
+
+  const correctPrefix = `${question.correct.trim()})`
+  return question.options.some(option => option.trim().startsWith(correctPrefix))
 }
 
 // ── Phase 4: Batched display ──────────────────────────────────────────────────
 
-/**
- * fillDisplay — ensures exactly DISPLAY_SIZE (5) questions are shown,
- * pulling from the pool to fill any gaps left by removed questions.
- */
-function fillDisplay () {
-  // Pull from pool until we have DISPLAY_SIZE or pool is exhausted
-  while (
-    displayedQuestions.length < DISPLAY_SIZE &&
-    nextPoolIndex < questionPool.length
-  ) {
-    displayedQuestions.push(questionPool[nextPoolIndex])
-    nextPoolIndex++
-  }
-
-  renderQuestions()
-  updatePoolInfo()
-}
-
 function updatePoolInfo () {
-  const remaining = questionPool.length - nextPoolIndex
+  const remaining = 0
   poolInfo.textContent =
-    remaining > 0
-      ? `Showing ${displayedQuestions.length} of ${questionPool.length} questions · ${remaining} remaining in pool`
-      : `Showing ${displayedQuestions.length} questions · Pool exhausted`
+    questionPool.length > 0
+      ? `Showing ${questionPool.length} generated · ${quizQuestions.length} added to quiz`
+      : 'Waiting for generated questions'
 }
 
 // ── Rendering ─────────────────────────────────────────────────────────────────
 
 function renderQuestions () {
-  if (displayedQuestions.length === 0) {
+  if (questionPool.length === 0) {
     questionsDisplay.innerHTML = `
-            <p style="font-family:Arial,sans-serif; color:var(--muted); text-align:center; padding:2rem;">
-                All questions removed. <a href="/" style="color:var(--primary);">Start over</a> to generate new ones.
+            <p class="questions-empty" style="font-family:Arial,sans-serif; color:var(--muted); text-align:center; padding:2rem;">
+                Generated questions will appear here. Keep adding the ones you want to the quiz list.
             </p>`
-    saveSection.classList.add('d-none')
+    updateQuestionCardStates()
+    updateGeneratedListCount()
     return
   }
 
-  // Count how many cards are already rendered on screen
-  const existingCards =
-    questionsDisplay.querySelectorAll('.question-card').length
+  const visibleQuestions = questionPool
+    .map((question, index) => ({ question, index }))
+    .filter(entry => !isQuestionInQuiz(entry.question))
 
-  // Only append NEW cards — don't touch existing ones (prevents flash during streaming)
-  for (let i = existingCards; i < displayedQuestions.length; i++) {
-    const cardHTML = buildQuestionCard(displayedQuestions[i], i)
-
-    // Create a temporary container to build the DOM element
-    const temp = document.createElement('div')
-    temp.innerHTML = cardHTML
-    const cardEl = temp.firstElementChild
-
-    // Wire up the remove button on this card only
-    const btn = cardEl.querySelector('.btn-remove')
-    btn.addEventListener('click', () => {
-      removeQuestion(parseInt(btn.dataset.index))
-    })
-
-    questionsDisplay.appendChild(cardEl)
-  }
-}
-
-/**
- * fullRenderQuestions — rebuilds the entire display from scratch.
- * Used after a removal (where indices change), NOT during streaming.
- */
-function fullRenderQuestions () {
-  questionsDisplay.innerHTML = ''
-
-  if (displayedQuestions.length === 0) {
+  if (visibleQuestions.length === 0) {
     questionsDisplay.innerHTML = `
-            <p style="font-family:Arial,sans-serif; color:var(--muted); text-align:center; padding:2rem;">
-                All questions removed. <a href="/" style="color:var(--primary);">Start over</a> to generate new ones.
+            <p class="questions-empty" style="font-family:Arial,sans-serif; color:var(--muted); text-align:center; padding:2rem;">
+                All generated questions are in your quiz list. Remove one on the right to bring it back here.
             </p>`
-    saveSection.classList.add('d-none')
+    updateQuestionCardStates()
+    updateGeneratedListCount()
     return
   }
 
-  questionsDisplay.innerHTML = displayedQuestions
-    .map((q, i) => buildQuestionCard(q, i))
+  questionsDisplay.innerHTML = visibleQuestions
+    .map(entry => buildQuestionCard(entry.question, entry.index))
     .join('')
 
-  // Wire up remove buttons
-  questionsDisplay.querySelectorAll('.btn-remove').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const idx = parseInt(btn.dataset.index)
-      removeQuestion(idx)
-    })
-  })
+  updateQuestionCardStates()
+  updateGeneratedListCount()
 }
 
-/**
- * buildQuestionCard — returns the HTML string for a single question card.
- * Extracted so both renderQuestions (append) and fullRenderQuestions (rebuild)
- * can use the same template.
- */
+function appendNewQuestions (startIndex) {
+  if (questionPool.length === 0 || startIndex >= questionPool.length) {
+    updateQuestionCardStates()
+    return
+  }
+
+  const emptyState = questionsDisplay.querySelector('.questions-empty')
+  if (emptyState) emptyState.remove()
+
+  const newMarkup = questionPool
+    .map((question, index) => ({ question, index }))
+    .filter(entry => entry.index >= startIndex && !isQuestionInQuiz(entry.question))
+    .map(entry => buildQuestionCard(entry.question, entry.index))
+    .join('')
+
+  if (!newMarkup) {
+    updateQuestionCardStates()
+    updateGeneratedListCount()
+    return
+  }
+
+  questionsDisplay.insertAdjacentHTML('beforeend', newMarkup)
+  updateQuestionCardStates()
+  updateGeneratedListCount()
+}
+
+// Build one question-card HTML fragment.
 function buildQuestionCard (q, i) {
+  const isAdded = isQuestionInQuiz(q)
   return `
-    <div class="question-card" data-index="${i}">
-        <button class="btn-remove" data-index="${i}">
-            <i class="bi bi-x"></i> Remove
+    <div class="question-card${isAdded ? ' added-to-quiz' : ''}" data-index="${i}">
+        <button type="button" class="btn-add-to-quiz btn-add-side" data-index="${i}" ${isAdded ? 'disabled' : ''}>
+          ${isAdded ? '<i class="bi bi-check-lg"></i> Added to quiz' : '<i class="bi bi-plus-lg"></i> Add to quiz'}
         </button>
         <div class="question-num">Question ${i + 1}</div>
         <div class="question-text">${q.question}</div>
@@ -1343,39 +1649,24 @@ function buildQuestionCard (q, i) {
   `
 }
 
-/**
- * removeQuestion — removes a question from the display and pulls a
- * replacement from the pool.
- */
-function removeQuestion (displayIndex) {
-  displayedQuestions.splice(displayIndex, 1)
-  // After removal, indices change so we need a full rebuild
-  // Pull replacement from pool first
-  if (nextPoolIndex < questionPool.length) {
-    displayedQuestions.push(questionPool[nextPoolIndex])
-    nextPoolIndex++
-  }
-  fullRenderQuestions()
-  updatePoolInfo()
-}
-
 // ── Phase 5: Save ─────────────────────────────────────────────────────────────
 
 async function onSave () {
+  if (quizQuestions.length < MIN_QUIZ_QUESTIONS_TO_SAVE) {
+    alert(`Add at least ${MIN_QUIZ_QUESTIONS_TO_SAVE} question to the quiz list before saving.`)
+    return
+  }
+
   // Clear any previous title and open the modal
   quizTitleInput.value = ''
   confirmSaveBtn.disabled = true
   saveModal.show()
 }
 
-/**
- * onConfirmSave — triggered when lecturer clicks "Save Quiz" inside the modal.
- * This replaces the old prompt()-based flow that caused a silent failure
- * during the Iteration 1 demo.
- */
+// Save approved questions with title from modal input.
 async function onConfirmSave () {
   const title = quizTitleInput.value.trim()
-  if (!title) return // safety check — button should be disabled anyway
+  if (!title) return // Safety guard.
 
   saveModal.hide()
 
@@ -1384,11 +1675,11 @@ async function onConfirmSave () {
     '<span class="spinner-border spinner-border-sm"></span> Saving…'
 
   try {
-    // We save only the currently displayed questions (the approved ones)
-    const quizId = await saveQuiz(title, displayedQuestions, currentUser.uid)
+    // Save only the curated quiz list.
+    const quizId = await saveQuiz(title, quizQuestions, currentUser.uid)
     const quizUrl = `${window.location.origin}/quiz.html?id=${quizId}`
 
-    // Show success
+    // Show success state.
     document.getElementById('section-quiz').classList.add('d-none')
     sectionSaved.classList.remove('d-none')
     shareUrlEl.textContent = quizUrl
@@ -1396,9 +1687,9 @@ async function onConfirmSave () {
     saveSection.classList.add('d-none')
     setStep(4)
 
-    // Generate QR code for the quiz URL
+    // Build QR code for share URL.
     const qrContainer = document.getElementById('qrCode')
-    qrContainer.innerHTML = '' // Clear any previous QR code
+    qrContainer.innerHTML = '' // Clear previous QR code.
     new QRCode(qrContainer, {
       text: quizUrl,
       width: 160,
@@ -1408,7 +1699,7 @@ async function onConfirmSave () {
       correctLevel: QRCode.CorrectLevel.H
     })
 
-    // Wire up QR download button
+    // Bind QR download action.
     downloadQrBtn.onclick = () => {
       const canvas = qrContainer.querySelector('canvas')
       if (!canvas) return
@@ -1423,17 +1714,17 @@ async function onConfirmSave () {
     console.error('Save error:', error)
     alert('Failed to save quiz. Please try again.')
     saveBtn.disabled = false
-    saveBtn.innerHTML = '<i class="bi bi-cloud-upload"></i> Approve & Save Quiz'
+    saveBtn.innerHTML = '<i class="bi bi-cloud-upload"></i> Save Quiz'
   }
 }
 
 function resetToBeginning () {
-  // Clear the current quiz state and return to the upload step.
+  // Reset quiz state and return to mode selection.
   candidateWords = []
   selectedWords = new Set()
   questionPool = []
-  displayedQuestions = []
-  nextPoolIndex = 0
+  quizQuestions = []
+  quizGenerationComplete = false
 
   clearSelectedFile()
   extractBtn.disabled = true
@@ -1452,11 +1743,14 @@ function resetToBeginning () {
   sidebarBrandNote.textContent = 'Choose a mode to begin.'
 
   questionsDisplay.innerHTML = ''
+  quizList.innerHTML = ''
   document.getElementById('reviewChips').innerHTML = ''
   document.getElementById('reviewExtracted').textContent = '0'
   document.getElementById('reviewKeeping').textContent = '0'
   document.getElementById('reviewRemoved').textContent = '0'
   document.getElementById('reviewCountNote').textContent = ''
+
+  updateQuizListUI()
 
   setStep(0)
   window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -1466,7 +1760,7 @@ function resetToBeginning () {
 
 function setStep (activeStep) {
   for (let i = 1; i <= 4; i++) {
-    // Old top step bar (still live — will be removed in a later task)
+    // Legacy top step bar (kept for backward compatibility).
     const topEl = document.getElementById(`step-indicator-${i}`)
     if (topEl) {
       topEl.classList.remove('active', 'done')
@@ -1474,7 +1768,7 @@ function setStep (activeStep) {
       if (i === activeStep) topEl.classList.add('active')
     }
 
-    // New sidebar step indicator
+    // Sidebar step indicator.
     const sideEl = document.getElementById(`sidebar-step-${i}`)
     if (sideEl) {
       sideEl.classList.remove('active', 'done')

@@ -389,15 +389,15 @@
     </div>
 
     <!-- ══ Delete Confirmation Modal ══ -->
-    <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-modal="true" role="alertdialog" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">
+                    <h5 class="modal-title" id="deleteModalLabel">
                         <i class="bi bi-exclamation-triangle"></i>
                         Delete quiz
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     Are you sure you want to delete "<span id="deleteQuizTitle"></span>"?

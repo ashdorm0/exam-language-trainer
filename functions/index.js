@@ -1,6 +1,7 @@
 const functions = require('firebase-functions/v2')
 const express = require('express')
 const Anthropic = require('@anthropic-ai/sdk')
+const admin = require('firebase-admin')
 const cors = require('cors')
 const path = require('path')
 const fs = require('fs/promises')
@@ -10,17 +11,28 @@ const nlp = require('compromise')
 const { removeStopwords, eng } = require('stopword')
 
 const app = express()
-const POOL_SIZE = 30
+const POOL_SIZE = 60
+const MAX_QUIZ_WORDS = 100
+const MIN_REVIEW_WORDS = 30
+const RELAXED_SCORE_FLOOR = -0.2
+const MAX_WORD_LENGTH = 64
+const MAX_SUBJECT_LENGTH = 120
 
 let commonWords = new Set()
 
 // ─── Rate Limiting ────────────────────────────────────────────────────────────
-// Simple in-memory store: tracks request timestamps per IP address.
-// Each IP gets a sliding 1-hour window. After 50 requests, further requests
-// are rejected with HTTP 429. This protects against runaway API costs.
+// Firestore-backed rate limit: survives function cold starts.
+// In-memory map is retained as a fallback when Firestore is unavailable.
 const requestCounts = new Map()
 const RATE_LIMIT = 50
 const RATE_WINDOW = 60 * 60 * 1000 // 1 hour in ms
+const RATE_LIMIT_COLLECTION = 'rateLimits'
+
+if (!admin.apps.length) {
+  admin.initializeApp()
+}
+
+const firestore = admin.firestore()
 
 app.use(cors())
 app.use(express.json({ limit: '20mb' }))
@@ -59,7 +71,6 @@ async function loadCommonWords () {
         .filter(word => word.length > 0)
 
     commonWords = new Set([...parseWordList(ngslText), ...parseWordList(basicText)])
-    console.log(`Common words loaded for server extraction: ${commonWords.size}`)
   } catch (error) {
     console.warn('Failed to load common-word lists on server:', error)
     commonWords = new Set()
@@ -68,34 +79,154 @@ async function loadCommonWords () {
 
 const commonWordsReady = loadCommonWords()
 
-app.use((req, res, next) => {
+function getClientIp (req) {
   const forwardedFor = req.headers['x-forwarded-for']
-  const ip =
+  return (
     req.ip ||
     req.socket?.remoteAddress ||
     req.connection?.remoteAddress ||
     (typeof forwardedFor === 'string' ? forwardedFor.split(',')[0].trim() : '') ||
     'unknown'
-  const now = Date.now()
+  )
+}
 
+function getRateLimitDocId (ip) {
+  return Buffer.from(ip).toString('base64url')
+}
+
+async function checkFirestoreRateLimit (ip, now) {
+  const ref = firestore.collection(RATE_LIMIT_COLLECTION).doc(getRateLimitDocId(ip))
+  let limited = false
+  let retryAfterSeconds = 0
+
+  await firestore.runTransaction(async tx => {
+    const snapshot = await tx.get(ref)
+    const existing = snapshot.exists ? snapshot.data() : {}
+    const history = Array.isArray(existing.timestamps) ? existing.timestamps : []
+    const recent = history.filter(timestamp => now - timestamp < RATE_WINDOW)
+
+    if (recent.length >= RATE_LIMIT) {
+      limited = true
+      const oldest = Math.min(...recent)
+      retryAfterSeconds = Math.max(
+        1,
+        Math.ceil((RATE_WINDOW - (now - oldest)) / 1000)
+      )
+      return
+    }
+
+    recent.push(now)
+    tx.set(
+      ref,
+      {
+        ip,
+        timestamps: recent,
+        lastSeen: now,
+        expiresAtMs: now + RATE_WINDOW,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      },
+      { merge: true }
+    )
+  })
+
+  return { limited, retryAfterSeconds }
+}
+
+function checkInMemoryRateLimit (ip, now) {
   if (!requestCounts.has(ip)) requestCounts.set(ip, [])
   const recent = requestCounts.get(ip).filter(t => now - t < RATE_WINDOW)
 
   if (recent.length >= RATE_LIMIT) {
-    return res
-      .status(429)
-      .json({ error: 'Too many requests. Please try again later.' })
+    const oldest = Math.min(...recent)
+    const retryAfterSeconds = Math.max(
+      1,
+      Math.ceil((RATE_WINDOW - (now - oldest)) / 1000)
+    )
+    return { limited: true, retryAfterSeconds }
   }
 
   recent.push(now)
   requestCounts.set(ip, recent)
-  next()
+  return { limited: false, retryAfterSeconds: 0 }
+}
+
+app.use(async (req, res, next) => {
+  const ip = getClientIp(req)
+  const now = Date.now()
+
+  try {
+    const result = await checkFirestoreRateLimit(ip, now)
+    if (result.limited) {
+      res.setHeader('Retry-After', String(result.retryAfterSeconds))
+      return res
+        .status(429)
+        .json({ error: 'Too many requests. Please try again later.' })
+    }
+    return next()
+  } catch (error) {
+    console.error('Firestore rate limit check failed, using fallback:', error)
+
+    const fallbackResult = checkInMemoryRateLimit(ip, now)
+    if (fallbackResult.limited) {
+      res.setHeader('Retry-After', String(fallbackResult.retryAfterSeconds))
+      return res
+        .status(429)
+        .json({ error: 'Too many requests. Please try again later.' })
+    }
+
+    return next()
+  }
 })
 
 // ─── Anthropic Client ─────────────────────────────────────────────────────────
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY
 })
+
+function cleanPromptText (value) {
+  return value.replace(/[\u0000-\u001F\u007F]/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
+function normalizeQuizWordsInput (words) {
+  if (!Array.isArray(words)) {
+    const error = new Error('Words must be an array.')
+    error.statusCode = 400
+    throw error
+  }
+
+  if (words.length === 0) {
+    const error = new Error('No words provided')
+    error.statusCode = 400
+    throw error
+  }
+
+  if (words.length > MAX_QUIZ_WORDS) {
+    const error = new Error(`Too many words. Maximum allowed is ${MAX_QUIZ_WORDS}.`)
+    error.statusCode = 400
+    throw error
+  }
+
+  const normalized = []
+  for (const item of words) {
+    if (typeof item !== 'string') continue
+    const cleaned = cleanPromptText(item).slice(0, MAX_WORD_LENGTH)
+    if (!cleaned) continue
+    normalized.push(cleaned)
+  }
+
+  if (normalized.length === 0) {
+    const error = new Error('No valid words provided')
+    error.statusCode = 400
+    throw error
+  }
+
+  return normalized
+}
+
+function normalizeSubjectInput (subject) {
+  if (typeof subject !== 'string') return ''
+  return cleanPromptText(subject).slice(0, MAX_SUBJECT_LENGTH)
+}
 
 function normalizeWord (word) {
   return word.toLowerCase().replace(/^[^a-z]+|[^a-z]+$/g, '').trim()
@@ -309,6 +440,43 @@ function scoreDifficulty (entry) {
   return score
 }
 
+function scoreDifficultyRelaxed (entry) {
+  const { word, frequency, posScore } = entry
+  const syllables = estimateSyllables(word)
+
+  let score = 0
+  score += Math.max(0.35, posScore)
+
+  if (frequency === 1) score += 1.2
+  else if (frequency === 2) score += 0.5
+  else score -= Math.min(1.5, frequency - 2)
+
+  if (word.length >= 7) score += 0.65
+  if (word.length >= 9) score += 0.4
+  if (syllables >= 3) score += 0.8
+  if (syllables >= 4) score += 0.4
+  if (hasAcademicSuffix(word)) score += 0.8
+
+  if (/(?:ing|ed)$/.test(word) && !hasAcademicSuffix(word) && !/related$/.test(word)) {
+    score -= 0.35
+  }
+
+  return score
+}
+
+function selectTopCandidatesWithTies (ranked, targetSize) {
+  if (ranked.length <= targetSize) return ranked
+
+  const cutoffScore = ranked[targetSize - 1].score
+  let endIndex = targetSize
+
+  while (endIndex < ranked.length && ranked[endIndex].score === cutoffScore) {
+    endIndex++
+  }
+
+  return ranked.slice(0, endIndex)
+}
+
 function extractVocabulary (text) {
   const doc = nlp(text)
 
@@ -381,7 +549,7 @@ function extractVocabulary (text) {
     stats.set(term, entry)
   }
 
-  return [...stats.values()]
+  const ranked = [...stats.values()]
     .map(entry => ({ ...entry, score: scoreDifficulty(entry) }))
     .filter(entry => entry.score > 0)
     .sort(
@@ -391,8 +559,33 @@ function extractVocabulary (text) {
         a.firstSeen - b.firstSeen ||
         a.word.localeCompare(b.word)
     )
-    .slice(0, POOL_SIZE)
-    .map(entry => entry.word)
+
+  const result = selectTopCandidatesWithTies(ranked, POOL_SIZE).map(entry => entry.word)
+
+  if (result.length < MIN_REVIEW_WORDS) {
+    const selected = new Set(result)
+    const relaxed = [...stats.values()]
+      .map(entry => ({
+        ...entry,
+        score: scoreDifficultyRelaxed(entry)
+      }))
+      .filter(entry => entry.score > RELAXED_SCORE_FLOOR && !selected.has(entry.word))
+      .sort(
+        (a, b) =>
+          b.score - a.score ||
+          b.frequency - a.frequency ||
+          a.firstSeen - b.firstSeen ||
+          a.word.localeCompare(b.word)
+      )
+
+    for (const entry of relaxed) {
+      result.push(entry.word)
+      selected.add(entry.word)
+      if (result.length >= POOL_SIZE) break
+    }
+  }
+
+  return result
 }
 
 async function extractTextFromUpload (file) {
@@ -420,8 +613,6 @@ app.post('/extract-course-vocabulary', async (req, res) => {
 
     const file = decodeBase64Payload(req.body)
 
-    console.log(`Extract course vocabulary request received: ${file.fileName}`)
-
     const text = await extractTextFromUpload(file)
     if (!text || text.trim().length < 30) {
       return res.status(400).json({ error: 'Uploaded file has too little readable text.' })
@@ -446,21 +637,14 @@ app.post('/extract-course-vocabulary', async (req, res) => {
 })
 
 // ─── Single Endpoint: /generate-quiz ─────────────────────────────────────────
-// Streams Claude's response to the browser using Server-Sent Events (SSE).
-// The browser receives text chunks in real time and can parse complete
-// question objects as they arrive, rather than waiting for the full response.
-//
+// Stream Claude output over SSE so the browser can render progressively.
 app.post('/generate-quiz', async (req, res) => {
   try {
     const { words, subject } = req.body
+    const normalizedWords = normalizeQuizWordsInput(words)
+    const normalizedSubject = normalizeSubjectInput(subject)
 
-    if (!words || words.length === 0) {
-      return res.status(400).json({ error: 'No words provided' })
-    }
-
-    console.log(`Generating quiz (streaming): ${words.length} curated words`)
-
-    // Set headers for Server-Sent Events
+    // Configure SSE response headers.
     res.setHeader('Content-Type', 'text/event-stream')
     res.setHeader('Cache-Control', 'no-cache')
     res.setHeader('Connection', 'keep-alive')
@@ -472,10 +656,10 @@ app.post('/generate-quiz', async (req, res) => {
       messages: [
         {
           role: 'user',
-          content: `The lecturer has curated the following list of vocabulary words from an exam paper. Generate one multiple-choice vocabulary question for each word.
+          content: `The lecturer has curated the following list of vocabulary words from an exam paper${normalizedSubject ? ` for ${normalizedSubject}` : ''}. Generate one multiple-choice vocabulary question for each word.
 
 Words:
-${words.join(', ')}
+${normalizedWords.join(', ')}
 
 For each word, create ONE question with:
 - A clear question about the word's meaning or usage in academic English
@@ -495,31 +679,31 @@ Return ONLY a JSON array. No explanation, no markdown, no extra text. Format:
       ]
     })
 
-    // Forward each text chunk to the browser as an SSE event
+    // Forward each text chunk as an SSE event.
     for await (const chunk of stream) {
       if (
         chunk.type === 'content_block_delta' &&
         chunk.delta.type === 'text_delta'
       ) {
-        // SSE format: "data: <text>\n\n"
+        // SSE frame payload.
         res.write(`data: ${JSON.stringify({ text: chunk.delta.text })}\n\n`)
       }
     }
 
-    // Signal end of stream
+    // Signal end of stream.
     res.write(`data: ${JSON.stringify({ done: true })}\n\n`)
     res.end()
 
-    console.log('Stream complete')
   } catch (error) {
     console.error('Error in /generate-quiz:', error)
-    // If headers haven't been sent yet, send JSON error
+    // Return JSON error when stream has not started.
     if (!res.headersSent) {
+      const statusCode = error.statusCode || 500
       res
-        .status(500)
-        .json({ error: 'Failed to generate quiz. Please try again.' })
+        .status(statusCode)
+        .json({ error: error.message || 'Failed to generate quiz. Please try again.' })
     } else {
-      // Headers already sent (mid-stream error) — send error as SSE
+      // Stream already started; send error frame.
       res.write(
         `data: ${JSON.stringify({
           error: 'Stream interrupted. Please try again.'
