@@ -1,6 +1,4 @@
-/**
- * quiz.js — Exam Language Trainer, Student Quiz Interface
- */
+// Student quiz runtime: load, answer, score, and review.
 
 import { db } from './firebase.js'
 import {
@@ -21,7 +19,7 @@ let selectedAnswer = null
 async function loadQuiz () {
   const card = document.querySelector('.quiz-card')
 
-  // Get quiz ID from URL query string: quiz.html?id=abc123
+  // Read quiz ID from query string.
   const params = new URLSearchParams(window.location.search)
   const quizId = params.get('id')
 
@@ -43,9 +41,7 @@ async function loadQuiz () {
     questions = quiz.questions
     quizTitle = quiz.title
 
-    console.log(`Quiz loaded: "${quiz.title}", ${questions.length} questions`)
-
-    // Show landing screen with Start button
+    // Show landing screen.
     showLanding(card, quiz.title)
   } catch (err) {
     console.error('Firestore error:', err)
@@ -68,7 +64,7 @@ function showLanding (card, title) {
     `
 
   document.getElementById('startBtn').addEventListener('click', () => {
-    // Reset state in case of retake
+    // Reset state for a fresh attempt.
     score = 0
     wrongAnswers = []
     showQuestion(0)
@@ -116,28 +112,28 @@ function showQuestion (index) {
         </button>
     `
 
-  // Wire up option selection
+  // Bind option selection.
   document.querySelectorAll('.option').forEach(option => {
     option.addEventListener('click', () => {
-      // Clear previous selection
+      // Clear previous selection.
       document
         .querySelectorAll('.option')
         .forEach(o => o.classList.remove('selected'))
-      // Mark selected
+      // Mark selected option.
       option.classList.add('selected')
       selectedAnswer = option.dataset.value
-      // Enable next
+      // Enable next button.
       document.getElementById('nextBtn').disabled = false
     })
   })
 
-  // Wire up next/submit
+  // Bind next/submit action.
   document.getElementById('nextBtn').addEventListener('click', () => {
-    // Score the answer
+    // Score answer.
     if (selectedAnswer === q.correct) {
       score++
     } else {
-      // Store both the question and what the student actually picked
+      // Keep incorrect answer details for review.
       wrongAnswers.push({ ...q, studentAnswer: selectedAnswer })
     }
 
@@ -219,7 +215,7 @@ function showResults () {
   document.getElementById('retakeBtn').addEventListener('click', () => {
     score = 0
     wrongAnswers = []
-    // Shuffle questions for retake
+    // Shuffle order for retake.
     questions = [...questions].sort(() => Math.random() - 0.5)
     showQuestion(0)
   })
@@ -227,7 +223,7 @@ function showResults () {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-/** Returns an encouraging message based on score percentage */
+// Return a score message based on percentage.
 function scoreMessage (percent) {
   if (percent === 100) return 'Perfect score!'
   if (percent >= 80) return 'Great work!'
@@ -235,7 +231,7 @@ function scoreMessage (percent) {
   return "Keep practising — you'll get there."
 }
 
-/** Renders a full-card error message */
+// Render a full-card error message.
 function showError (card, message) {
   card.innerHTML = `
         <div class="state-message">

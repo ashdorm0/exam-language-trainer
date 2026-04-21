@@ -1,0 +1,20 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /quizzes/{quizId} {
+      // Students can open a quiz by direct link.
+      allow get: if true;
+
+      // Lecturers can only list their own quizzes.
+      allow list: if request.auth != null && resource.data.lecturerId == request.auth.uid;
+
+      // Only the signed-in lecturer can create under their own UID.
+      allow create: if request.auth != null
+        && request.resource.data.lecturerId == request.auth.uid;
+
+      // Only the owner can modify or delete.
+      allow update, delete: if request.auth != null
+        && resource.data.lecturerId == request.auth.uid;
+    }
+  }
+}

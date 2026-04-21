@@ -1,0 +1,134 @@
+[33mcommit 97610e59dd9338b19337e4d97a108b679c1bfaf5[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32miteration-3[m[33m)[m
+Author: Thomas <c00302068@setu.ie>
+Date:   Thu Apr 9 10:03:37 2026 +0100
+
+    Use NGSL word list for common-word filtering
+
+[1mdiff --git a/src/js/main.js b/src/js/main.js[m
+[1mindex 0c5fa24..151bd5a 100644[m
+[1m--- a/src/js/main.js[m
+[1m+++ b/src/js/main.js[m
+[36m@@ -58,7 +58,7 @@[m [masync function loadCommonWords () {[m
+    * the COMMON_WORDS Set.[m
+    */[m
+   try {[m
+[31m-    const response = await fetch('../libs/common_words_1200.txt')[m
+[32m+[m[32m    const response = await fetch('../libs/common_words_ngsl.txt')[m
+     const text = await response.text()[m
+     COMMON_WORDS = new Set([m
+       text[m
+[36m@@ -136,7 +136,7 @@[m [mdocument.addEventListener('DOMContentLoaded', async () => {[m
+   document.getElementById('signOutBtn').addEventListener('click', onSignOut)[m
+ [m
+   // Listen for auth state changes — this fires on page load too[m
+[31m-  onAuthStateChanged(auth, (user) => {[m
+[32m+[m[32m  onAuthStateChanged(auth, user => {[m
+     currentUser = user[m
+     const authSection = document.getElementById('section-auth')[m
+     const toolSection = document.getElementById('section-lecturer-tool')[m
+[36m@@ -189,7 +189,11 @@[m [masync function onSignIn () {[m
+     // onAuthStateChanged will handle the UI switch[m
+   } catch (error) {[m
+     console.error('Sign-in error:', error.code)[m
+[31m-    if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {[m
+[32m+[m[32m    if ([m
+[32m+[m[32m      error.code === 'auth/invalid-credential' ||[m
+[32m+[m[32m      error.code === 'auth/user-not-found' ||[m
+[32m+[m[32m      error.code === 'auth/wrong-password'[m
+[32m+[m[32m    ) {[m
+       showAuthError('Incorrect email or password.')[m
+     } else {[m
+       showAuthError('Sign-in failed. Please try again.')[m
+[36m@@ -218,7 +222,9 @@[m [masync function onRegister () {[m
+   } catch (error) {[m
+     console.error('Register error:', error.code)[m
+     if (error.code === 'auth/email-already-in-use') {[m
+[31m-      showAuthError('An account with this email already exists. Try signing in.')[m
+[32m+[m[32m      showAuthError([m
+[32m+[m[32m        'An account with this email already exists. Try signing in.'[m
+[32m+[m[32m      )[m
+     } else if (error.code === 'auth/invalid-email') {[m
+       showAuthError('Please enter a valid email address.')[m
+     } else {[m
+[36m@@ -252,10 +258,12 @@[m [mfunction onFileSelected () {[m
+ [m
+ function setFile (file) {[m
+   const name = file.name.toLowerCase()[m
+[31m-  if (!name.endsWith('.txt') && !name.endsWith('.pdf') && !name.endsWith('.docx')) {[m
+[31m-    alert([m
+[31m-      'Please upload a .txt, .pdf, or .docx file.'[m
+[31m-    )[m
+[32m+[m[32m  if ([m
+[32m+[m[32m    !name.endsWith('.txt') &&[m
+[32m+[m[32m    !name.endsWith('.pdf') &&[m
+[32m+[m[32m    !name.endsWith('.docx')[m
+[32m+[m[32m  ) {[m
+[32m+[m[32m    alert('Please upload a .txt, .pdf, or .docx file.')[m
+     return[m
+   }[m
+   // Show file name[m
+[36m@@ -378,24 +386,16 @@[m [masync function extractTextFromDOCX (file) {[m
+  * extractVocabulary — the NLP pipeline[m
+  */[m
+ function extractVocabulary (text) {[m
+[31m-  // Step 1: Compromise.js normalisation[m
+   const doc = nlp(text)[m
+[31m-  const allTerms = doc.terms().out('array')[m
+[32m+[m[32m  const allTerms = doc.not('#ProperNoun').terms().out('array')[m
+ [m
+[31m-  // Step 2: Clean tokens[m
+   const cleaned = allTerms[m
+[31m-    .map(word =>[m
+[31m-      word[m
+[31m-        .toLowerCase()[m
+[31m-        .replace(/[^a-z]/g, '')[m
+[31m-        .trim()[m
+[31m-    )[m
+[31m-    .filter(word => word.length >= 4 && /^[a-z]+$/.test(word))[m
+[32m+[m[32m    .map(word => word.toLowerCase().trim())[m
+[32m+[m[32m    .filter(word => /^[a-z]+$/.test(word) && word.length >= 4)[m
+ [m
+[31m-  // Step 3: Stopword removal[m
+   const withoutStopwords = removeStopwords(cleaned, eng)[m
+[32m+[m[41m [m
+ [m
+[31m-  // Step 4: Remove common words[m
+   const filtered = withoutStopwords.filter(word => !COMMON_WORDS.has(word))[m
+ [m
+   // Step 5: Count frequency[m
+[36m@@ -532,7 +532,6 @@[m [masync function onConfirmAndGenerate () {[m
+     // Final parse attempt on complete response[m
+     tryParseQuestions(rawText)[m
+     console.log(`Stream finished. Total questions: ${questionPool.length}`)[m
+[31m-[m
+   } catch (error) {[m
+     console.error('Generation error:', error)[m
+     questionsDisplay.innerHTML = `[m
+[36m@@ -611,7 +610,9 @@[m [mfunction tryParseQuestions (rawText) {[m
+   if (objects.length > questionPool.length) {[m
+     const newQuestions = objects.slice(questionPool.length)[m
+     questionPool = objects[m
+[31m-    console.log(`Parsed ${newQuestions.length} new question(s), total: ${questionPool.length}`)[m
+[32m+[m[32m    console.log([m
+[32m+[m[32m      `Parsed ${newQuestions.length} new question(s), total: ${questionPool.length}`[m
+[32m+[m[32m    )[m
+ [m
+     // Update display[m
+     fillDisplay()[m
+[36m@@ -659,7 +660,8 @@[m [mfunction renderQuestions () {[m
+   }[m
+ [m
+   // Count how many cards are already rendered on screen[m
+[31m-  const existingCards = questionsDisplay.querySelectorAll('.question-card').length[m
+[32m+[m[32m  const existingCards =[m
+[32m+[m[32m    questionsDisplay.querySelectorAll('.question-card').length[m
+ [m
+   // Only append NEW cards — don't touch existing ones (prevents flash during streaming)[m
+   for (let i = existingCards; i < displayedQuestions.length; i++) {[m
+[36m@@ -835,4 +837,4 @@[m [mfunction setStep (activeStep) {[m
+     if (i < activeStep) el.classList.add('done')[m
+     if (i === activeStep) el.classList.add('active')[m
+   }[m
+[31m-}[m
+\ No newline at end of file[m
+[32m+[m[32m}[m
