@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Language Trainer — Product Overview</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Literata:opsz,wght@7..72,500;7..72,700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="./css/styles.css" rel="stylesheet">
+</head>
+
+<body class="landing-page">
+    <header class="landing-nav-wrap">
+        <nav class="landing-nav container-xl">
+            <a class="landing-brand" href="landing.html">
+                <span class="landing-brand-dot"></span>
+                <span>Exam Language Trainer</span>
+            </a>
+            <div class="landing-nav-links">
+                <a href="#what-it-is">What It Is</a>
+                <a href="#screenshots">Screenshots</a>
+                <a href="#lecturers">For Lecturers</a>
+                <a href="#students">For Students</a>
+                <a href="#faqs">FAQs</a>
+                <a href="#support">Support</a>
+            </div>
+            <a class="landing-open-app" href="index.html">Open App</a>
+        </nav>
+    </header>
+
+    <main>
+        <section class="landing-hero container-xl" id="what-it-is">
+            <div class="landing-hero-copy">
+                <p class="landing-kicker">App Overview</p>
+                <h1>Create secure vocabulary quizzes from exam papers in minutes.</h1>
+                <p class="landing-lead">Exam Language Trainer helps lecturers support students studying in a non-native language by extracting difficult vocabulary from exam material and turning it into a curated multiple-choice quiz. The workflow is designed to protect exam integrity: in exam mode, document processing stays in the lecturer's browser and only approved quiz questions are shared with students.</p>
+                <div class="landing-hero-actions">
+                    <a class="landing-btn-primary" href="index.html">Start Lecturer Workflow</a>
+                    <a class="landing-btn-secondary" href="#lecturers">See Step-by-Step Guide</a>
+                </div>
+            </div>
+            <div class="landing-hero-card">
+                <h2>Quick facts</h2>
+                <ul>
+                    <li><i class="bi bi-file-earmark-text"></i> Supports .txt, .pdf, .docx</li>
+                    <li><i class="bi bi-shield-lock"></i> Exam-paper mode is browser-local</li>
+                    <li><i class="bi bi-people"></i> Students access quizzes without accounts</li>
+                    <li><i class="bi bi-lightning-charge"></i> Typical flow: upload, curate, generate, share</li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="landing-section container-xl" id="screenshots">
+            <div class="landing-section-head">
+                <p class="landing-kicker">Screenshots</p>
+                <h2>Core screens from the final iteration</h2>
+            </div>
+            <div class="landing-gallery">
+                <article class="landing-shot">
+                    <img src="assets/screenshots/mode-selector.png" alt="Mode selector showing exam-local and course-server options">
+                    <h3>Mode Selector</h3>
+                    <p>Choose secure local extraction for exam papers or server extraction for course material.</p>
+                </article>
+                <article class="landing-shot">
+                    <img src="assets/screenshots/word-curation.png" alt="Word curation interface with extracted vocabulary chips">
+                    <h3>Word Selection</h3>
+                    <p>Review extracted vocabulary and remove words before quiz generation.</p>
+                </article>
+                <article class="landing-shot">
+                    <img src="assets/screenshots/quiz-review.png" alt="Quiz review page where generated questions are curated">
+                    <h3>Quiz Review</h3>
+                    <p>Curate generated questions and finalize the exact set students will see.</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="landing-section container-xl" id="lecturers">
+            <div class="landing-section-head">
+                <p class="landing-kicker">How To Use — Lecturers</p>
+                <h2>From sign-in to share in 7 short steps</h2>
+            </div>
+            <div class="landing-steps-grid">
+                <article class="landing-step-card">
+                    <img src="assets/screenshots/mode-selector.png" alt="Lecturer sign in and mode selection area">
+                    <h3>1. Sign in</h3>
+                    <p>Open the lecturer tool and sign in with your lecturer account.</p>
+                </article>
+                <article class="landing-step-card">
+                    <img src="assets/screenshots/mode-selector.png" alt="Mode selector cards">
+                    <h3>2. Choose mode</h3>
+                    <p>Select Exam Paper (local) or Course Material (server) mode.</p>
+                </article>
+                <article class="landing-step-card">
+                    <img src="assets/screenshots/mode-selector.png" alt="Upload area in lecturer workflow">
+                    <h3>3. Upload file</h3>
+                    <p>Upload your .txt, .pdf, or .docx file and run extraction.</p>
+                </article>
+                <article class="landing-step-card">
+                    <img src="assets/screenshots/word-curation.png" alt="Word curation chips interface">
+                    <h3>4. Curate words</h3>
+                    <p>Keep difficult words that matter and remove anything unsuitable.</p>
+                </article>
+                <article class="landing-step-card">
+                    <img src="assets/screenshots/quiz-review.png" alt="Generated questions displayed in quiz builder">
+                    <h3>5. Generate and curate questions</h3>
+                    <p>Generate questions from curated words, then keep only the best questions in the final quiz list.</p>
+                </article>
+                <article class="landing-step-card">
+                    <img src="assets/screenshots/save-file.png" alt="Save Quiz modal where lecturer enters a quiz title">
+                    <h3>6. Save quiz</h3>
+                    <p>Enter a quiz title and save the curated quiz set.</p>
+                </article>
+                <article class="landing-step-card">
+                    <img src="assets/screenshots/share-quiz.png" alt="Share quiz page with link and QR code">
+                    <h3>7. Share quiz</h3>
+                    <p>Share the generated link or QR code with your students.</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="landing-section container-xl" id="students">
+            <div class="landing-section-head">
+                <p class="landing-kicker">How To Use — Students</p>
+                <h2>Quick student workflow</h2>
+            </div>
+            <div class="landing-student-flow">
+                <article>
+                    <span>1</span>
+                    <p>Open the quiz link shared by your lecturer.</p>
+                </article>
+                <article>
+                    <span>2</span>
+                    <p>Complete the vocabulary quiz on any browser-enabled device.</p>
+                </article>
+                <article>
+                    <span>3</span>
+                    <p>Review your score and feedback immediately after submission.</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="landing-section container-xl" id="faqs">
+            <div class="landing-section-head">
+                <p class="landing-kicker">FAQs</p>
+                <h2>Common questions</h2>
+            </div>
+            <div class="landing-faq-grid">
+                <article>
+                    <h3>Is my exam paper uploaded to a server?</h3>
+                    <p>In Exam Paper mode, no. The document is processed in your browser and stays local. In Course Material mode, uploaded course files are processed server-side by design.</p>
+                </article>
+                <article>
+                    <h3>Do students need an account?</h3>
+                    <p>No. Students open the shared quiz link directly and can complete the quiz without registering.</p>
+                </article>
+                <article>
+                    <h3>What file types are supported?</h3>
+                    <p>The tool supports .txt, .pdf, and .docx files.</p>
+                </article>
+                <article>
+                    <h3>How many questions are in a quiz?</h3>
+                    <p>A typical quiz includes around 25 questions selected from a curated pool of about 30 target words.</p>
+                </article>
+                <article>
+                    <h3>Can students retake a quiz?</h3>
+                    <p>Yes. Students can reopen the shared link and retake the quiz when needed.</p>
+                </article>
+                <article>
+                    <h3>Can I edit a quiz after saving?</h3>
+                    <p>No. After saving, the quiz is fixed. To make changes, generate and save a new quiz version.</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="landing-section container-xl" id="support">
+            <div class="landing-support-card">
+                <div>
+                    <p class="landing-kicker">Contact / Support</p>
+                    <h2>Need help or want to collaborate?</h2>
+                    <p>For support, feedback, or project discussion, use the contact details below.</p>
+                </div>
+                <div class="landing-support-links">
+                    <a href="mailto:tomradulescu@proton.me"><i class="bi bi-envelope"></i> tomradulescu@proton.me</a>
+                    <a href="https://github.com/ashdorm0/exam-language-trainer" target="_blank" rel="noopener noreferrer"><i class="bi bi-github"></i> github.com/ashdorm0/exam-language-trainer</a>
+                </div>
+            </div>
+        </section>
+    </main>
+</body>
+
+</html>

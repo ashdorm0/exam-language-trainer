@@ -1,14 +1,25 @@
 {
   "name": "exam-language-trainer",
   "version": "1.0.0",
-  "description": "",
+  "description": "A lecturer tool for generating vocabulary quizzes from exam papers and course materials.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"No unit test suite configured yet\"",
     "smoke:api": "bash scripts/smoke-api.sh"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "education",
+    "quiz",
+    "vocabulary",
+    "exam",
+    "firebase"
+  ],
+  "author": "Tom Radulescu",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ashdorm0/exam-language-trainer.git"
+  },
+  "homepage": "https://github.com/ashdorm0/exam-language-trainer#readme",
   "license": "ISC",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.74.0",
